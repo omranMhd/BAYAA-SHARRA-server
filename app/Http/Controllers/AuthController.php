@@ -6,8 +6,14 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Requests\RegisterUserRequest;
 use App\Http\Requests\LoginUserRequest;
+use App\Http\Requests\VerifyAccountRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\EmailVerification;
+use App\Models\ActivationCode;
+use Nette\Utils\Random;
+use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
@@ -22,9 +28,19 @@ class AuthController extends Controller
             'address' => $request->address
         ]);
 
+        $activation_code = Random::generate(6, "0-9");
+        $verified_by = $request->has('email') ? 'email' : 'phone';
+        ActivationCode::create([
+            'user_id' => $user->id,
+            'code' => $activation_code,
+            'is_used' => false,
+            'verified_by' => $verified_by,
+        ]);
+
+        Mail::to($request->email)->send(new EmailVerification($activation_code));
 
         return response()->json([
-            'status' => "registration is done",
+            'status' => "registration is done , verify your account",
             'massage' => "",
             'data' => [
                 'user' => $user,
@@ -58,9 +74,42 @@ class AuthController extends Controller
         ]);
     }
     public function logout(Request $request)
-    {   
+    {
         // $request->user()->currentAccessToken()->delete();
         $request->user()->tokens()->delete();
         return response()->json(['message' => 'logout is done']);
+    }
+    public function verifyAccount(VerifyAccountRequest $request)
+    {
+        $activationCode = ActivationCode::where('code', $request->code)
+            ->where('user_id', $request->user_id)
+            ->where('is_used', false)->first();
+
+        if ($activationCode) {
+            try {
+                DB::beginTransaction();
+
+                $activationCode->is_used = true;
+                $activationCode->save();
+
+                $user = User::find($request->user_id);
+
+                if ($activationCode->verified_by == 'email') {
+                    $user->email_verified_at = now()->timestamp;
+                    $user->save();
+                } else {
+                    $user->phone_verified_at = now()->timestamp;
+                    $user->save();
+                }
+
+                DB::commit();
+                return response()->json(['message' => 'verification done']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json(['message' => 'verification failed'], 402);
+            }
+        } else {
+            return response()->json(['message' => 'invalid verification code'], 400);
+        }
     }
 }

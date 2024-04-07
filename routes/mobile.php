@@ -31,4 +31,5 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         return User::get();
     });
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/verify-account', [AuthController::class, 'verifyAccount']);
 });
