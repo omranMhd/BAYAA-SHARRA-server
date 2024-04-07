@@ -17,8 +17,8 @@ return new class extends Migration
             $table->foreign('user_id')->references('id')->on('users');
             $table->foreignId('category_id')->comment('تمثل نوع الاعلان وهي واحدة من الصناف التي يدعمها الموقع');
             $table->foreign('category_id')->references('id')->on('categories');
-            $table->json('address')->comment('نضع مكان تواجد الاعلان ضمن اوبجكت جيسن (البلد-المدينة)');
-            $table->json('location')->comment('نضع خط الطول والعرض في حال كان الاعلان عقار');
+            $table->string('address')->comment('نضع مكان تواجد الاعلان ضمن اوبجكت جيسن (البلد-المدينة)');
+            $table->string('location')->comment('نضع خط الطول والعرض في حال كان الاعلان عقار');
             $table->text('title', 50);
             $table->text('description');
             $table->integer('contactNumber');

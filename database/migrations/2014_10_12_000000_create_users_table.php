@@ -13,15 +13,15 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('first name', 10);
-            $table->string('last name', 10);
-            $table->string('email')->unique();
+            $table->string('firstName', 10);
+            $table->string('lastName', 10);
+            $table->string('email')->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->integer('phone');
-            $table->json('address')->comment('ضمن هذا نقوم بتخزين البلد والمدينة ضمن اوبجكت جيسن');
-            $table->string('image');
-            $table->enum('type', ["user", "admin"]);
+            $table->integer('phone')->nullable();
+            $table->string('address')->comment('ضمن هذا نقوم بتخزين البلد والمدينة ضمن اوبجكت جيسن');
+            $table->string('image')->nullable();
+            $table->enum('type', ["user", "admin"])->default("user");
             $table->rememberToken();
             $table->timestamps();
         });
