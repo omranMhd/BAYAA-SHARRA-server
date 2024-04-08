@@ -19,25 +19,34 @@ class AuthController extends Controller
 {
     public function register(RegisterUserRequest $request)
     {
-        $user = User::create([
+        $user_id = User::create([
             'firstName' => $request->firstName,
             'lastName' => $request->lastName,
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
             'address' => $request->address
-        ]);
+        ])->id;
 
+        $user = User::find($user_id);
         $activation_code = Random::generate(6, "0-9");
         $verified_by = $request->has('email') ? 'email' : 'phone';
+
         ActivationCode::create([
-            'user_id' => $user->id,
+            'user_id' => $user_id,
             'code' => $activation_code,
             'is_used' => false,
             'verified_by' => $verified_by,
         ]);
 
-        Mail::to($request->email)->send(new EmailVerification($activation_code));
+        // send activation code by email
+        if ($verified_by == 'email') {
+            Mail::to($request->email)->send(new EmailVerification($activation_code));
+        }
+        // send activation code by SMS
+        else if ($verified_by == 'phone') {
+            //return $user ;
+        }
 
         return response()->json([
             'status' => "registration is done , verify your account",
@@ -89,6 +98,7 @@ class AuthController extends Controller
             try {
                 DB::beginTransaction();
 
+                //update activation Code to make it used and invalid to use anymore 
                 $activationCode->is_used = true;
                 $activationCode->save();
 
