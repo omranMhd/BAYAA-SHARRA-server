@@ -73,6 +73,10 @@ class AuthController extends Controller
         // return $authKey;
         $user = User::where($authKey, $request->$authKey)->first();
 
+        if ($user->email_verified_at == null && $user->phone_verified_at == null) {
+            
+            return response()->json(['message' => 'Your account is unverified'], 423);
+        }
         return response()->json([
             'status' => "login is done",
             'massage' => "",
@@ -113,7 +117,7 @@ class AuthController extends Controller
                 }
 
                 DB::commit();
-                return response()->json(['message' => 'verification done']);
+                return response()->json(['message' => 'verification done', 'data' => $user]);
             } catch (\Exception $e) {
                 DB::rollBack();
                 return response()->json(['message' => 'verification failed'], 402);
