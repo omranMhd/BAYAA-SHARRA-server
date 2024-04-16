@@ -19,34 +19,51 @@ class AuthController extends Controller
 {
     public function register(RegisterUserRequest $request)
     {
-        $user_id = User::create([
-            'firstName' => $request->firstName,
-            'lastName' => $request->lastName,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'password' => Hash::make($request->password),
-            'address' => $request->address
-        ])->id;
 
-        $user = User::find($user_id);
         $activation_code = Random::generate(6, "0-9");
         $verified_by = $request->has('email') ? 'email' : 'phone';
+        $user_id = null;
 
-        ActivationCode::create([
-            'user_id' => $user_id,
-            'code' => $activation_code,
-            'is_used' => false,
-            'verified_by' => $verified_by,
-        ]);
 
-        // send activation code by email
         if ($verified_by == 'email') {
+            $user_id = User::create([
+                'firstName' => $request->firstName,
+                'lastName' => $request->lastName,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'address' => $request->address
+            ])->id;
+
+            ActivationCode::create([
+                'user_id' => $user_id,
+                'code' => $activation_code,
+                'is_used' => false,
+                'verified_by' => $verified_by,
+            ]);
+
+            // send activation code by email
             Mail::to($request->email)->send(new EmailVerification($activation_code));
+        } else if ($verified_by == 'phone') {
+            $user_id = User::create([
+                'firstName' => $request->firstName,
+                'lastName' => $request->lastName,
+                'phone' => $request->phone,
+                'password' => Hash::make($request->password),
+                'address' => $request->address
+            ])->id;
+
+            ActivationCode::create([
+                'user_id' => $user_id,
+                'code' => $activation_code,
+                'is_used' => false,
+                'verified_by' => $verified_by,
+            ]);
+
+            // send activation code by SMS
+
         }
-        // send activation code by SMS
-        else if ($verified_by == 'phone') {
-            //return $user ;
-        }
+
+        $user = User::find($user_id);
 
         return response()->json([
             'status' => "registration is done , verify your account",
@@ -73,9 +90,16 @@ class AuthController extends Controller
         // return $authKey;
         $user = User::where($authKey, $request->$authKey)->first();
 
+        // if the account is unverified
         if ($user->email_verified_at == null && $user->phone_verified_at == null) {
-            
-            return response()->json(['message' => 'Your account is unverified'], 423);
+
+            return response()->json([
+                'message' => 'Your account is unverified',
+                'data' => [
+                    'user' => $user,
+                    'token' => $user->createToken('api token of ' . $user->firstName)->plainTextToken
+                ]
+            ], 423);
         }
         return response()->json([
             'status' => "login is done",
