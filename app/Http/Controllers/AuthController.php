@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\RegisterUserRequest;
 use App\Http\Requests\LoginUserRequest;
 use App\Http\Requests\VerifyAccountRequest;
+use App\Http\Requests\ResendCodeRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -148,6 +149,41 @@ class AuthController extends Controller
             }
         } else {
             return response()->json(['message' => 'invalid verification code'], 400);
+        }
+    }
+    public function resendCode(ResendCodeRequest $request)
+    {
+        $activation_code = Random::generate(6, "0-9");
+
+        $activation_code_id = ActivationCode::create([
+            'user_id' => $request->user_id,
+            'code' => $activation_code,
+            'is_used' => false,
+            'verified_by' => $request->verified_by,
+        ])->id;
+
+        if ($request->verified_by == "email") {
+            try {
+                // send activation code by email
+                Mail::to($request->email)->send(new EmailVerification($activation_code));
+
+                return response()->json([
+                    "message" => "Check your e-mail. The code has been sent to him."
+                ]);
+            } catch (\Exception $e) {
+                // Retrieve the activation_code by ID
+                $activation_code = ActivationCode::find($activation_code_id);
+
+                // Delete the activation_code
+                if ($activation_code) {
+                    $activation_code->delete();
+                }
+                return response()->json([
+                    "message" => "Failed to send an email"
+                ], 500);
+            }
+        } else if ($request->verified_by == "phone") {
+            // send activation code by SMS
         }
     }
 }

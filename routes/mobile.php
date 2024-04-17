@@ -32,4 +32,5 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/verify-account', [AuthController::class, 'verifyAccount']);
+    Route::post('/resend-code', [AuthController::class, 'resendCode']);
 });
