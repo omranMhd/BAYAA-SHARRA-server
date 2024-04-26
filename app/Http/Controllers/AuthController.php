@@ -13,15 +13,17 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\EmailVerification;
 use App\Models\ActivationCode;
-use Nette\Utils\Random;
 use Illuminate\Support\Facades\DB;
+use App\Http\Traits\VerificationCode;
 
 class AuthController extends Controller
 {
+    use VerificationCode;
+
     public function register(RegisterUserRequest $request)
     {
 
-        $activation_code = Random::generate(6, "0-9");
+        $activation_code = $this->generateCode();
         $verified_by = $request->has('email') ? 'email' : 'phone';
         $user_id = null;
 
@@ -153,7 +155,7 @@ class AuthController extends Controller
     }
     public function resendCode(ResendCodeRequest $request)
     {
-        $activation_code = Random::generate(6, "0-9");
+        $activation_code = $this->generateCode();
 
         $activation_code_id = ActivationCode::create([
             'user_id' => $request->user_id,
