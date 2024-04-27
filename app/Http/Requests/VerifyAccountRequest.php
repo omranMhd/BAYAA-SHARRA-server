@@ -22,7 +22,7 @@ class VerifyAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'numeric', 'digits:6'],
+            'code' => ['required', 'numeric', 'digits:4'],
             'user_id' => ['required', 'exists:users,id']
         ];
     }
