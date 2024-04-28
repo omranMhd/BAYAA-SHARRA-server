@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CountriesInfoController;
+use App\Http\Controllers\CategoryController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::get('/countries-info', [CountriesInfoController::class, 'getInfo']);
+Route::get('/main-categories', [CategoryController::class, 'mainCategories']);
 
 //protected routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
