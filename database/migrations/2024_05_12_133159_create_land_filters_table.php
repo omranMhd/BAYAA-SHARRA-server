@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('real_estate_filters', function (Blueprint $table) {
+        Schema::create('land_filters', function (Blueprint $table) {
             $table->id();
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
-            $table->integer('area');
-            $table->enum('areaUnit', ["meter","kilo","donom","kasaba","theraa","fadan"]);
-            $table->integer('floor');
-            $table->enum('cladding', ["haikal","maksy","mafrosh"])->comment('الاكساء (عظم او مكسي)');
-            $table->enum('sellOrRent', ["sell","rent"])->comment('بيع او أجار');
+            $table->integer('area')->comment('بالمتر المربع');
+            $table->bigInteger('price');
+            $table->bigInteger('newPrice');
+            $table->string('currency');
+            $table->string('molkia');
+            $table->enum('sellOrRent', ["sell", "rent"]);
+            $table->enum('paymentMethodRent', ["daily", "weekly", "monthly", "yearly"]);
             $table->timestamps();
         });
     }
@@ -29,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('real_estate_filters');
+        Schema::dropIfExists('land_filters');
     }
 };

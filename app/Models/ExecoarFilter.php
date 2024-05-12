@@ -5,20 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ClothesFasionFilter extends Model
+class ExecoarFilter extends Model
 {
     use HasFactory;
 
-    protected $table = 'clothes_fashion_filters';
+    protected $table = 'execoar_filters';
 
-    protected $fillable = [
-        'advertisement_id',
-        'price',
-        'newPrice',
-        'currency',
-        'status',
-        'type',
-    ];
+    protected $fillable = ['*'];
 
     public function advertisement()
     {

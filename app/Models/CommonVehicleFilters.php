@@ -5,20 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class RealEstateFilter extends Model
+class CommonVehicleFilters extends Model
 {
     use HasFactory;
 
-    protected $table = 'real_estate_filters';
+    protected $table = 'common_vehicle_filters';
 
-    protected $fillable = [
-        'advertisement_id',
-        'area',
-        'areaUnit',
-        'floor',
-        'cladding',
-        'sellOrRent',
-    ];
+    protected $fillable = ['*'];
 
     public function advertisement()
     {

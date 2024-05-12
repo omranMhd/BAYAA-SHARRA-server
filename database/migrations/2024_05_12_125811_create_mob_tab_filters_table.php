@@ -11,15 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('clothes_fashion_filters', function (Blueprint $table) {
+        Schema::create('mob_tab_filters', function (Blueprint $table) {
             $table->id();
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
             $table->bigInteger('price');
             $table->bigInteger('newPrice');
             $table->string('currency');
-            $table->enum('status', ["old", "new"]);
-            $table->enum('type', ["pants", "shirt", "jacket", "formal suit", "shoes"]);
+            $table->string('brand')->comment('مثلا شاومي');
+            $table->string('category')->comment('مثلا note 11 pro');
+            $table->integer('ram')->comment('سعة الرام بواحدة الغيغا');
+            $table->integer('hard')->comment('سعة الهارد بواحدة الغيغا');
+            $table->enum('status', ["old", "new"])->comment('جديد او مستعمل');
             $table->timestamps();
         });
     }
@@ -29,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('clothes_fashion_filters');
+        Schema::dropIfExists('mob_tab_filters');
     }
 };

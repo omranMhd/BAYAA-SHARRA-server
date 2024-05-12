@@ -11,15 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('clothes_fashion_filters', function (Blueprint $table) {
+        Schema::create('computer_filters', function (Blueprint $table) {
             $table->id();
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
             $table->bigInteger('price');
             $table->bigInteger('newPrice');
             $table->string('currency');
-            $table->enum('status', ["old", "new"]);
-            $table->enum('type', ["pants", "shirt", "jacket", "formal suit", "shoes"]);
+            $table->string('brand')->comment('مثلا HP');
+            $table->string('category')->comment('مثلا victus');
+            $table->integer('ram');
+            $table->integer('hard');
+            $table->string('processor');
+            $table->enum('status', ["old", "new"])->comment('جديد او مستعمل');
+            $table->enum('screenType', ["touch", "normal"])->comment('لمس او عادي');
+            $table->integer('screenSize')->comment('قياس الشاشة');
             $table->timestamps();
         });
     }
@@ -29,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('clothes_fashion_filters');
+        Schema::dropIfExists('computer_filters');
     }
 };

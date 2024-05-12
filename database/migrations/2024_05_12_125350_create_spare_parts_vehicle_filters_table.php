@@ -11,15 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('clothes_fashion_filters', function (Blueprint $table) {
+        Schema::create('spare_parts_vehicle_filters', function (Blueprint $table) {
             $table->id();
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
             $table->bigInteger('price');
             $table->bigInteger('newPrice');
             $table->string('currency');
-            $table->enum('status', ["old", "new"]);
-            $table->enum('type', ["pants", "shirt", "jacket", "formal suit", "shoes"]);
+            $table->string('vehicleType')->comment('نوع المركبة التي تصلح لها هذه القطعة وهي واحدة من الفئات الفرعية للمركبات');
+            $table->enum('status', ["old", "new"])->comment('حالة القطعة جديدة او مستعملة');
             $table->timestamps();
         });
     }
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('clothes_fashion_filters');
+        Schema::dropIfExists('spare_parts_vehicle_filters');
     }
 };

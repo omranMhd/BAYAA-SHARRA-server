@@ -19,9 +19,6 @@ class Advertisement extends Model
         'title',
         'description',
         'contactNumber',
-        'price',
-        'newPrice',
-        'currency',
         'status',
         'paidFor',
     ];
@@ -39,26 +36,18 @@ class Advertisement extends Model
     {
         return $this->belongsTo(Category::class, 'category_id', 'id');
     }
-    public function vehicleFilter()
-    {
-        return $this->hasOne(VehicleFilter::class, 'advertisement_id', 'id');
-    }
+    
     public function clothesFashionFilter()
     {
         return $this->hasOne(ClothesFasionFilter::class, 'advertisement_id', 'id');
     }
-    public function electronicElectricalFilter()
-    {
-        return $this->hasOne(ElectronicElectricalFilter::class, 'advertisement_id', 'id');
-    }
-    public function realEstateFilter()
-    {
-        return $this->hasOne(RealEstateFilter::class, 'advertisement_id', 'id');
-    }
+    
+    
     public function furnitureFilters()
     {
         return $this->hasOne(FurnitureFilter::class, 'advertisement_id', 'id');
     }
+    
     public function favorites()
     {
         return $this->hasMany(Favorite::class, 'advertisement_id', 'id');

@@ -15,7 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
-            $table->enum('oldOrNew', ["old","new"]);
+            $table->bigInteger('price');
+            $table->bigInteger('newPrice');
+            $table->string('currency');
+            $table->enum('status', ["old", "new"]);
+            $table->enum('material', ["wood", "metal", "leather", "plastic"])->comment("مادة الصنع :خشب,معدن,جلد,بلاستك");
             $table->timestamps();
         });
     }

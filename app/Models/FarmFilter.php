@@ -5,19 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class VehicleFilter extends Model
+class FarmFilter extends Model
 {
     use HasFactory;
 
-    protected $table = 'vehicle_filters';
+    protected $table = 'farm_filters';
 
-    protected $fillable = [
-        'advertisement_id',
-        'oldOrNew',
-        'traveledDistance',
-        'sellOrRent',
-        'fuelType',
-    ];
+    protected $fillable = ['*'];
 
     public function advertisement()
     {

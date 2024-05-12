@@ -13,7 +13,11 @@ class FurnitureFilter extends Model
 
     protected $fillable = [
         'advertisement_id',
-        'oldOrNew',
+        'price',
+        'newPrice',
+        'currency',
+        'status',
+        'material',
     ];
 
     public function advertisement()

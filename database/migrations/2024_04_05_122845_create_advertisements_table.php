@@ -21,10 +21,7 @@ return new class extends Migration
             $table->string('location')->comment('نضع خط الطول والعرض في حال كان الاعلان عقار');
             $table->text('title', 50);
             $table->text('description');
-            $table->integer('contactNumber');
-            $table->integer('price');
-            $table->integer('newPrice');
-            $table->string('currency', 5);
+            $table->string('contactNumber')->comment('عبارة عن اوبجكت جيسون فيه مثلا رقمين للتواصل مع اسم لكل رقم');
             $table->enum('status', ["pending", "active", "rejected", "closed"])->comment('حالة');
             $table->boolean('paidFor')->comment('هل تم دفع الرسوم او لا');
             $table->timestamps();

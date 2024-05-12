@@ -27,6 +27,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::get('/countries-info', [CountriesInfoController::class, 'getInfo']);
 Route::get('/main-categories', [CategoryController::class, 'mainCategories']);
+Route::get('/sub-categories/{id}', [CategoryController::class, 'subCategories']);
 
 //protected routes
 Route::group(['middleware' => ['auth:sanctum']], function () {

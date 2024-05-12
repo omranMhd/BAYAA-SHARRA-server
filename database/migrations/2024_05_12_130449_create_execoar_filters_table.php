@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('electronic_electrical_filters', function (Blueprint $table) {
+        Schema::create('execoar_filters', function (Blueprint $table) {
             $table->id();
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
-            $table->enum('oldOrNew', ["old","new"]);
+            $table->bigInteger('price');
+            $table->bigInteger('newPrice');
+            $table->string('currency');
+            $table->string('deviceType')->comment('نوع الجهاز يلي بتصلح الو هي القطعة وهي اما موبايل او تاب او كومبيوتر');
             $table->timestamps();
         });
     }
@@ -25,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('electronic_electrical_filters');
+        Schema::dropIfExists('execoar_filters');
     }
 };

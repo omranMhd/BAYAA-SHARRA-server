@@ -5,16 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ElectronicElectricalFilter extends Model
+class OfficeFilter extends Model
 {
     use HasFactory;
 
-    protected $table = 'electronic_electrical_filters';
+    protected $table = 'office_filters';
 
-    protected $fillable = [
-        'advertisement_id',
-        'oldOrNew',
-    ];
+    protected $fillable = ['*'];
 
     public function advertisement()
     {
