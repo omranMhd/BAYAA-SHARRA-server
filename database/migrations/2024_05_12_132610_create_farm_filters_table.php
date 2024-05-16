@@ -15,16 +15,17 @@ return new class extends Migration
             $table->id();
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
-            $table->integer('area')->comment('بالمتر المربع');
-            $table->integer('roomCount');
-            $table->enum('cladding', ["deluxe", "new", "good", "old", "chassis"])->comment('حالة الإكساء (ديلوكس ,جديدة,جيدة,قديمة,على الهيكل )');
-            $table->integer('floorCount')->comment('عدد الطوابق');
+            $table->integer('area')->nullable()->comment('بالمتر المربع');
+            $table->integer('roomCount')->nullable();
+            $table->enum('cladding', ["deluxe", "new", "good", "old", "chassis"])->nullable()->comment('حالة الإكساء (ديلوكس ,جديدة,جيدة,قديمة,على الهيكل )');
+            $table->integer('floorCount')->nullable()->comment('عدد الطوابق');
             $table->bigInteger('price');
-            $table->bigInteger('newPrice');
+            $table->bigInteger('newPrice')->nullable();
             $table->string('currency');
-            $table->string('molkia');
+            $table->string('molkia')->nullable();
             $table->enum('sellOrRent', ["sell", "rent"]);
-            $table->enum('paymentMethodRent', ["daily", "weekly", "monthly", "yearly"]);
+            $table->enum('paymentMethodRent', ["daily", "weekly", "monthly", "yearly"])->nullable();
+            $table->enum('direction', ['north', 'south', 'west', 'east', 'north-east', 'north-west', 'south-east', 'south-west'])->nullable();
             $table->timestamps();
         });
     }

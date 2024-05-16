@@ -16,10 +16,10 @@ return new class extends Migration
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
             $table->bigInteger('price');
-            $table->bigInteger('newPrice');
+            $table->bigInteger('newPrice')->nullable();
             $table->string('currency');
-            $table->enum('status', ["old", "new"]);
-            $table->enum('material', ["wood", "metal", "leather", "plastic"])->comment("مادة الصنع :خشب,معدن,جلد,بلاستك");
+            $table->enum('status', ["old", "new"])->nullable();
+            $table->enum('material', ["wood", "metal", "leather", "plastic"])->nullable()->comment("مادة الصنع :خشب,معدن,جلد,بلاستك");
             $table->timestamps();
         });
     }

@@ -16,10 +16,10 @@ return new class extends Migration
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
             $table->bigInteger('price');
-            $table->bigInteger('newPrice');
+            $table->bigInteger('newPrice')->nullable();
             $table->string('currency');
             $table->string('vehicleType')->comment('نوع المركبة التي تصلح لها هذه القطعة وهي واحدة من الفئات الفرعية للمركبات');
-            $table->enum('status', ["old", "new"])->comment('حالة القطعة جديدة او مستعملة');
+            $table->enum('status', ["old", "new"])->comment('حالة القطعة جديدة او مستعملة')->nullable();
             $table->timestamps();
         });
     }

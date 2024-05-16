@@ -10,18 +10,11 @@ class CategoryController extends Controller
     // return all categories that have no parent
     public function mainCategories()
     {
-        $categories =  Category::select("id", "name")->whereNull('parent_id')->get();
+        $categories =  Category::select("id", "name_ar", "name_en")->whereNull('parent_id')->get();
         return response()->json([
             'massage' => "get main categories is done",
             'data' => $categories,
         ]);
-        // $names = [];
-        // foreach ($categories as $category) {
-        //     // Access the 'name' property and add it to the $names array
-        //     $names[] = $category->name;
-        // }
-
-        // return $names;
     }
     public function subCategories($id)
     {

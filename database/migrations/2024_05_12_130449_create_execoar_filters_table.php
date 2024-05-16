@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
             $table->bigInteger('price');
-            $table->bigInteger('newPrice');
+            $table->bigInteger('newPrice')->nullable();
             $table->string('currency');
             $table->string('deviceType')->comment('نوع الجهاز يلي بتصلح الو هي القطعة وهي اما موبايل او تاب او كومبيوتر');
             $table->timestamps();

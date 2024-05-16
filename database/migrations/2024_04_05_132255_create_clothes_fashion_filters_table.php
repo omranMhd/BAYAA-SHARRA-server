@@ -16,9 +16,9 @@ return new class extends Migration
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
             $table->bigInteger('price');
-            $table->bigInteger('newPrice');
+            $table->bigInteger('newPrice')->nullable();
             $table->string('currency');
-            $table->enum('status', ["old", "new"]);
+            $table->enum('status', ["old", "new"])->nullable();
             $table->enum('type', ["pants", "shirt", "jacket", "formal suit", "shoes"]);
             $table->timestamps();
         });

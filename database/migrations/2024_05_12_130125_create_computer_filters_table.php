@@ -16,16 +16,16 @@ return new class extends Migration
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
             $table->bigInteger('price');
-            $table->bigInteger('newPrice');
+            $table->bigInteger('newPrice')->nullable();
             $table->string('currency');
-            $table->string('brand')->comment('مثلا HP');
-            $table->string('category')->comment('مثلا victus');
-            $table->integer('ram');
-            $table->integer('hard');
-            $table->string('processor');
-            $table->enum('status', ["old", "new"])->comment('جديد او مستعمل');
-            $table->enum('screenType', ["touch", "normal"])->comment('لمس او عادي');
-            $table->integer('screenSize')->comment('قياس الشاشة');
+            $table->string('brand')->comment('مثلا HP')->nullable();
+            $table->string('category')->comment('مثلا victus')->nullable();
+            $table->integer('ram')->nullable();
+            $table->integer('hard')->nullable();
+            $table->string('processor')->nullable();
+            $table->enum('status', ["old", "new"])->comment('جديد او مستعمل')->nullable();
+            $table->enum('screenType', ["touch", "normal"])->nullable()->comment('لمس او عادي');
+            $table->integer('screenSize')->nullable()->comment('قياس الشاشة');
             $table->timestamps();
         });
     }
