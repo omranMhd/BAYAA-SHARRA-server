@@ -11,7 +11,20 @@ class ApartementFilter extends Model
 
     protected $table = 'apartement_filters';
 
-    protected $fillable = ['*'];
+    protected $fillable = [
+        'advertisement_id',
+        'area',
+        "floor",
+        "roomCount",
+        "cladding",
+        "price",
+        "newPrice",
+        "currency",
+        "molkia",
+        "sellOrRent",
+        "paymentMethodRent",
+        "direction"
+    ];
 
     public function advertisement()
     {

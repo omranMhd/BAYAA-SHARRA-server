@@ -3,6 +3,8 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CountriesInfoController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\AdvertisementController;
+use App\Models\Advertisement;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -35,4 +37,5 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/verify-account', [AuthController::class, 'verifyAccount']);
     Route::post('/resend-code', [AuthController::class, 'resendCode']);
+    Route::post('/add-new-ad', [AdvertisementController::class, 'addNewAdvertisement']);
 });
