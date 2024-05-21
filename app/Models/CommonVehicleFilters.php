@@ -11,7 +11,23 @@ class CommonVehicleFilters extends Model
 
     protected $table = 'common_vehicle_filters';
 
-    protected $fillable = ['*'];
+    protected $fillable = [
+        'advertisement_id',
+        'brand',
+        'category',
+        'color',
+        'gear',
+        'manufactureYear',
+        'traveledDistance',
+        'engineCapacity',
+        'fuel',
+        'price',
+        'newPrice',
+        'currency',
+        'paymentMethodRent',
+        'sellOrRent',
+        'paintStatus',
+    ];
 
     public function advertisement()
     {

@@ -11,7 +11,20 @@ class OfficeFilter extends Model
 
     protected $table = 'office_filters';
 
-    protected $fillable = ['*'];
+    protected $fillable = [
+        'advertisement_id',
+        'area',
+        'floor',
+        'roomCount',
+        'cladding',
+        'price',
+        'newPrice',
+        'currency',
+        'ownership',
+        'sellOrRent',
+        'paymentMethodRent',
+        'direction',
+    ];
 
     public function advertisement()
     {

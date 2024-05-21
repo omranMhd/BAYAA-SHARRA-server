@@ -11,7 +11,18 @@ class MobTabFilter extends Model
 
     protected $table = 'mob_tab_filters';
 
-    protected $fillable = ['*'];
+    protected $fillable = [
+        'advertisement_id',
+        'price',
+        'newPrice',
+        'currency',
+        'brand',
+        'category',
+        'ram',
+        'hard',
+        'status',
+        'batteryStatus',
+    ];
 
     public function advertisement()
     {

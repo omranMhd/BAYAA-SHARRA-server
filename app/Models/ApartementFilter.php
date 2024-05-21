@@ -20,7 +20,7 @@ class ApartementFilter extends Model
         "price",
         "newPrice",
         "currency",
-        "molkia",
+        "ownership",
         "sellOrRent",
         "paymentMethodRent",
         "direction"

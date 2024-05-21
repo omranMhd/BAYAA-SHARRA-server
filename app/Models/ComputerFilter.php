@@ -11,7 +11,20 @@ class ComputerFilter extends Model
 
     protected $table = 'computer_filters';
 
-    protected $fillable = ['*'];
+    protected $fillable = [
+        'advertisement_id',
+        'price',
+        'newPrice',
+        'currency',
+        'brand',
+        'category',
+        'ram',
+        'hard',
+        'processor',
+        'status',
+        'screenType',
+        'screenSize',
+    ];
 
     public function advertisement()
     {

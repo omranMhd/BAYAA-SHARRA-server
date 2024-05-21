@@ -22,7 +22,7 @@ return new class extends Migration
             $table->bigInteger('price');
             $table->bigInteger('newPrice')->nullable();
             $table->string('currency');
-            $table->string('molkia')->nullable();
+            $table->string('ownership')->nullable()->comment('نوع وثيقة الملكية');
             $table->enum('sellOrRent', ["sell", "rent"]);
             $table->enum('paymentMethodRent', ["daily", "weekly", "monthly", "yearly"])->nullable();
             $table->timestamps();

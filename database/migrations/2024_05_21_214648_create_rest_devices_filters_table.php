@@ -11,17 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('land_filters', function (Blueprint $table) {
+        Schema::create('rest_devices_filters', function (Blueprint $table) {
             $table->id();
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
-            $table->integer('area')->nullable()->comment('بالمتر المربع');
             $table->bigInteger('price');
             $table->bigInteger('newPrice')->nullable();
             $table->string('currency');
-            $table->string('ownership')->nullable()->comment('نوع وثيقة الملكية');
-            $table->enum('sellOrRent', ["sell", "rent"]);
-            $table->enum('paymentMethodRent', ["daily", "weekly", "monthly", "yearly"])->nullable();
+            $table->enum('deviceStatus', ["old", "new"])->nullable();
             $table->timestamps();
         });
     }
@@ -31,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('land_filters');
+        Schema::dropIfExists('rest_devices_filters');
     }
 };

@@ -11,7 +11,20 @@ class VellaFilter extends Model
 
     protected $table = 'vella_filters';
 
-    protected $fillable = ['*'];
+    protected $fillable = [
+        'advertisement_id',
+        'area',
+        'roomCount',
+        'cladding',
+        'floorsCount',
+        'price',
+        'newPrice',
+        'currency',
+        'ownership',
+        'sellOrRent',
+        'paymentMethodRent',
+        'direction',
+    ];
 
     public function advertisement()
     {

@@ -14,9 +14,15 @@
 </head>
 
 <body class="antialiased">
-    <h1 style="background-color: blue; color:aliceblue">BAYAA SHARRA</h1>
-    <P>use this code to verify your account:</P>
-    <h2 style="color:red">{{$activationCode}}</h2>
+    <div style="background-color: #d1deed; padding:30px;">
+        <!-- <img /> -->
+        <div style="width: 50%; height: 200px; background-color: #ffffff; margin: auto ;margin-top:200px;padding:30px;">
+
+            <h1 style="background-color: blue; color:aliceblue">BAYAA SHARRA</h1>
+            <P>use this code to verify your account:</P>
+            <h2 style="color:red">{{$activationCode}}</h2>
+        </div>
+    </div>
 </body>
 
 </html>

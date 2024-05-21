@@ -11,7 +11,20 @@ class ShalehFilter extends Model
 
     protected $table = 'shaleh_filters';
 
-    protected $fillable = ['*'];
+    protected $fillable = [
+        'advertisement_id',
+        'area',
+        'floor',
+        'roomCount',
+        'cladding',
+        'price',
+        'newPrice',
+        'currency',
+        'ownership',
+        'sellOrRent',
+        'paymentMethodRent',
+
+    ];
 
     public function advertisement()
     {

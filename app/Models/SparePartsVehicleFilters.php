@@ -11,7 +11,15 @@ class SparePartsVehicleFilters extends Model
 
     protected $table = 'spare_parts_vehicle_filters';
 
-    protected $fillable = ['*'];
+    protected $fillable = [
+        'advertisement_id',
+        'price',
+        'newPrice',
+        'currency',
+        'vehicleType',
+        'status',
+    
+    ];
 
     public function advertisement()
     {

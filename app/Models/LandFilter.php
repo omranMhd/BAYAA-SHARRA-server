@@ -11,7 +11,16 @@ class LandFilter extends Model
 
     protected $table = 'land_filters';
 
-    protected $fillable = ['*'];
+    protected $fillable = [
+        'advertisement_id',
+        'area',
+        'price',
+        'newPrice',
+        'currency',
+        'ownership',
+        'sellOrRent',
+        'paymentMethodRent',
+    ];
 
     public function advertisement()
     {

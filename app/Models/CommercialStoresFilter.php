@@ -11,7 +11,18 @@ class CommercialStoresFilter extends Model
 
     protected $table = 'commercial_stores_filters';
 
-    protected $fillable = ['*'];
+    protected $fillable = [
+        'advertisement_id',
+        'area',
+        'floor',
+        'cladding',
+        'price',
+        'newPrice',
+        'currency',
+        'ownership',
+        'sellOrRent',
+        'paymentMethodRent',
+    ];
 
     public function advertisement()
     {

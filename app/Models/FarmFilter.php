@@ -11,7 +11,20 @@ class FarmFilter extends Model
 
     protected $table = 'farm_filters';
 
-    protected $fillable = ['*'];
+    protected $fillable = [
+    'advertisement_id',
+    'area',
+    'roomCount',
+    'cladding',
+    'floorCount',
+    'price',
+    'newPrice',
+    'currency',
+    'ownership',
+    'sellOrRent',
+    'paymentMethodRent',
+    'direction',
+];
 
     public function advertisement()
     {

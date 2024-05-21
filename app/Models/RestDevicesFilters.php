@@ -5,22 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ExecoarFilter extends Model
+class RestDevicesFilters extends Model
 {
     use HasFactory;
 
-    protected $table = 'execoar_filters';
+    protected $table = 'rest_devices_filters';
 
     protected $fillable = [
         'advertisement_id',
         'price',
         'newPrice',
         'currency',
-        'deviceType',
+        'deviceStatus',
     ];
-
-    public function advertisement()
-    {
-        return $this->belongsTo(Advertisement::class, 'advertisement_id', 'id');
-    }
 }
