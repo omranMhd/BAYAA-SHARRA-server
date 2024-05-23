@@ -16,7 +16,7 @@ class VellaFilter extends Model
         'area',
         'roomCount',
         'cladding',
-        'floorsCount',
+        'floorCount',
         'price',
         'newPrice',
         'currency',

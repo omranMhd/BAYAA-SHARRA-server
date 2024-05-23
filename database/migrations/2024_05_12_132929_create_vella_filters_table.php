@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('area')->nullable()->comment('بالمتر المربع');
             $table->integer('roomCount')->nullable();
             $table->enum('cladding', ["deluxe", "new", "good", "old", "chassis"])->nullable()->comment('حالة الإكساء (ديلوكس ,جديدة,جيدة,قديمة,على الهيكل )');
-            $table->integer('floorsCount')->nullable()->comment('عدد الطوابق');
+            $table->integer('floorCount')->nullable()->comment('عدد الطوابق');
             $table->bigInteger('price');
             $table->bigInteger('newPrice')->nullable();
             $table->string('currency');
