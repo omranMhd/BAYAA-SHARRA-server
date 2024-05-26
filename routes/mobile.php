@@ -40,4 +40,5 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/verify-account', [AuthController::class, 'verifyAccount']);
     Route::post('/resend-code', [AuthController::class, 'resendCode']);
     Route::post('/add-new-ad', [AdvertisementController::class, 'addNewAdvertisement']);
+    Route::get('/ad-details/{id}', [AdvertisementController::class, 'advertisementDetails']);
 });

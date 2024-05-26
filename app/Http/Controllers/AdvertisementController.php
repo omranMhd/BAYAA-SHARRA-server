@@ -319,5 +319,122 @@ class AdvertisementController extends Controller
     }
     public function getAllAdvertisement()
     {
+        
+    }
+    //اعادة معلومات الاعلان وهي معلوماته الأساسية والصور وحقول الفلترة إن وجدت وبعض المعلومات عن صاحب الإعلان مثل الاسم والصورة والتقييم
+    public function advertisementDetails($id)
+    {
+        // $ad = Advertisement::with("images","user")->find($id);
+        $ad = Advertisement::find($id);
+        $owner = [];
+        $advertisementDetails = [];
+        if ($ad != null) {
+
+            // معلومات صاحب الإعلان
+            $owner["fullName"] = $ad->user->firstName . " " . $ad->user->lastName;
+            $owner["photo"] = $ad->user->image;
+            $advertisementDetails["owner"] = $owner;
+
+            $adPhotoes = array_map(function ($photo) {
+                return $photo["url"];
+            }, $ad->images->toArray());
+            //صور الإعلان
+            $advertisementDetails["adPhotoes"] = $adPhotoes;
+            // الفئة التي ينتمي لها الإعلان
+            $advertisementDetails["category"] = [
+                "name_ar" => $ad->category->name_ar,
+                "name_en" => $ad->category->name_en,
+            ];
+            $advertisementDetails["title"] = $ad->title;
+            $advertisementDetails["description"] = $ad->description;
+            $advertisementDetails["address"] = $ad->address;
+            $advertisementDetails["contactNumber"] = $ad->contactNumber;
+            $advertisementDetails["date"] = $ad->created_at;
+
+            //RealEstates
+            if ($ad->category->name_en == "Apartment") {
+                $advertisementDetails["additionalAttributes"] = $ad->apartementFilter;
+            } else if ($ad->category->name_en == "Farm") {
+                $advertisementDetails["additionalAttributes"] = $ad->farmFilter;
+            } else if ($ad->category->name_en == "Land") {
+                $advertisementDetails["additionalAttributes"] = $ad->landFilter;
+            } else if ($ad->category->name_en == "Commercial store") {
+                $advertisementDetails["additionalAttributes"] = $ad->commercialStoreFilter;
+            } else if ($ad->category->name_en == "Office") {
+                $advertisementDetails["additionalAttributes"] =  $ad->officeFilter;
+            } else if ($ad->category->name_en == "Chalet") {
+                $advertisementDetails["additionalAttributes"] = $ad->shalehFilter;
+            } else if ($ad->category->name_en == "Villa") {
+                $advertisementDetails["additionalAttributes"] = $ad->vellaFilter;
+            } else if (in_array($ad->category->name_en, ["Car", "Motorcycle", "Truck", "Bus", "Jabala", "Crane", "Bulldozer"])) {
+                $advertisementDetails["additionalAttributes"] = $ad->commonVehicleFilter;
+            } else if ($ad->category->name_en == "Spare parts") {
+                $advertisementDetails["additionalAttributes"] = $ad->sparePartsVehicleFilter;
+            } else if (in_array($ad->category->name_en, ["Mobile", "Tablet"])) {
+                $advertisementDetails["additionalAttributes"] = $ad->mobTabFilter;
+            } else if ($ad->category->name_en == "Computer") {
+                $advertisementDetails["additionalAttributes"] = $ad->computerFilter;
+            } else if ($ad->category->name_en == "Accessories") {
+                $advertisementDetails["additionalAttributes"] = $ad->execoarFilter;
+            } else if (in_array(
+                $ad->category->name_en,
+                ["Refrigerator", "Washing Machine", "Fan", "Heater", "Blenders juicers", "Oven Microwave", "Screen", "Receiver", "Solar Energy"]
+            )) {
+                $advertisementDetails["additionalAttributes"] = $ad->restDevicesFilter;
+            } else if (in_array(
+                $ad->category->name_en,
+                ["Bedroom", "Table", "Chair", "Bed", "Cabinet", "Sofa"]
+            )) {
+                $advertisementDetails["additionalAttributes"] = $ad->furnitureFilter;
+            } else if (in_array(
+                $ad->category->name_en,
+                ["Men", "Women", "children"]
+            )) {
+                $advertisementDetails["additionalAttributes"] = $ad->clothesFasionFilter;
+            } else if (in_array(
+                $ad->category->name_en,
+                ["Livestock", "Birds", "Cat", "Dog", "Fish"]
+            )) {
+                $advertisementDetails["additionalAttributes"] = $ad->generalAdditionalField;
+            } else if (in_array(
+                $ad->category->name_en,
+                ["gift", "Perfume", "Makeup", "Watch", "Glass"]
+            )) {
+                $advertisementDetails["additionalAttributes"] = $ad->generalAdditionalField;
+            } else if (in_array(
+                $ad->category->name_en,
+                ["Restaurant", "Cafe", "Park", "Bakery"]
+            )) {
+                $advertisementDetails["additionalAttributes"] = $ad->generalAdditionalField;
+            } else if (in_array(
+                $ad->category->name_en,
+                ["Book", "Stationery", "Musical Instrument"]
+            )) {
+                $advertisementDetails["additionalAttributes"] = $ad->generalAdditionalField;
+            } else if ($ad->category->name_en == "Children equipment") {
+                $advertisementDetails["additionalAttributes"] = $ad->generalAdditionalField;
+            } else if ($ad->category->name_en == "Sports and clubs") {
+                $advertisementDetails["additionalAttributes"] = $ad->generalAdditionalField;
+            } else if ($ad->category->name_en == "Industrial equipment") {
+                $advertisementDetails["additionalAttributes"] = $ad->generalAdditionalField;
+            }
+
+
+
+
+
+            // return $adPhotoes;
+            // return $owner;
+            // return $advertisementDetails;
+            // return $ad;
+            return response()->json([
+                "message" => "get advertisement details successfully",
+                "data" => $advertisementDetails
+            ]);
+        } else {
+            return response()->json([
+                "message" => "no ad with this id"
+            ], 404);
+        }
     }
 }
