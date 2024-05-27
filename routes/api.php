@@ -30,6 +30,8 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/countries-info', [CountriesInfoController::class, 'getInfo']);
 Route::get('/main-categories', [CategoryController::class, 'mainCategories']);
 Route::get('/sub-categories/{id}', [CategoryController::class, 'subCategories']);
+ // get all active advertisements to users 
+Route::get('/all-advertisements', [AdvertisementController::class, 'getAllAdvertisement']);
 
 //protected routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
