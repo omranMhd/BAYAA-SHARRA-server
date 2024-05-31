@@ -14,7 +14,7 @@ class CommonVehicleFilters extends Model
     protected $fillable = [
         'advertisement_id',
         'brand',
-        'category',
+        'model',
         'color',
         'gear',
         'manufactureYear',

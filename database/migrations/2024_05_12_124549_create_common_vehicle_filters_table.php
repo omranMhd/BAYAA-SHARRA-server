@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('advertisement_id');
             $table->foreign('advertisement_id')->references('id')->on('advertisements');
             $table->string('brand')->nullable()->comment('مثلا kia');
-            $table->string('category')->nullable()->comment( 'rioمثلا');
+            $table->string('model')->nullable()->comment( 'rioمثلا');
             $table->string('color')->nullable();
             $table->enum('gear', ["normal", "automatic"])->nullable()->comment('ناقل الحركة');
             $table->integer('manufactureYear')->nullable()->comment('سنة الصنع');

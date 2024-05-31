@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CountriesInfoController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AdvertisementController;
+use App\Http\Controllers\FavoriteController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -29,6 +30,8 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/countries-info', [CountriesInfoController::class, 'getInfo']);
 Route::get('/main-categories', [CategoryController::class, 'mainCategories']);
 Route::get('/sub-categories/{id}', [CategoryController::class, 'subCategories']);
+// get all active advertisements to users 
+Route::get('/all-advertisements', [AdvertisementController::class, 'getAllAdvertisement']);
 
 //protected routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -41,4 +44,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/resend-code', [AuthController::class, 'resendCode']);
     Route::post('/add-new-ad', [AdvertisementController::class, 'addNewAdvertisement']);
     Route::get('/ad-details/{id}', [AdvertisementController::class, 'advertisementDetails']);
+    Route::post('/add-ad-favorite/{user_id}/{ad_id}', [FavoriteController::class, 'addAdvertisementToFavoriteList']);
+    Route::delete('/remove-ad-favorite/{user_id}/{ad_id}', [FavoriteController::class, 'removeAdvertisementFromFavoriteList']);
+    Route::get('/is-ad-in-favorite-list/{user_id}/{ad_id}', [FavoriteController::class, 'checkIfAdvertisementInFavoriteList']);
 });

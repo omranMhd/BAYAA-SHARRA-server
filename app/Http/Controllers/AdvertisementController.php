@@ -22,11 +22,12 @@ use App\Models\ShalehFilter;
 use App\Models\SparePartsVehicleFilters;
 use App\Models\VellaFilter;
 use Illuminate\Http\Request;
+use App\Http\Requests\AddNewAdvertisementRequest;
 use Illuminate\Support\Facades\DB;
 
 class AdvertisementController extends Controller
 {
-    public function addNewAdvertisement(Request $request)
+    public function addNewAdvertisement(AddNewAdvertisementRequest $request)
     {
         try {
             $ad_id = null;
@@ -151,7 +152,7 @@ class AdvertisementController extends Controller
                     CommonVehicleFilters::create([
                         "advertisement_id" => $ad_id,
                         "brand" => $request->filterFields_brand,
-                        "category" => $request->filterFields_category,
+                        "model" => $request->filterFields_model,
                         "color" => $request->filterFields_color,
                         "gear" => $request->filterFields_gear,
                         "manufactureYear" => $request->filterFields_manufactureYear,
@@ -320,7 +321,7 @@ class AdvertisementController extends Controller
     public function getAllAdvertisement()
     {
         // here must return just active advertisements
-        
+
         // $advertisements = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->paginate(15);
         // return $advertisements;
 
