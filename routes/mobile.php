@@ -5,6 +5,8 @@ use App\Http\Controllers\CountriesInfoController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AdvertisementController;
 use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\LikeController;
+use App\Http\Controllers\ComplaintController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -47,4 +49,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/add-ad-favorite/{user_id}/{ad_id}', [FavoriteController::class, 'addAdvertisementToFavoriteList']);
     Route::delete('/remove-ad-favorite/{user_id}/{ad_id}', [FavoriteController::class, 'removeAdvertisementFromFavoriteList']);
     Route::get('/is-ad-in-favorite-list/{user_id}/{ad_id}', [FavoriteController::class, 'checkIfAdvertisementInFavoriteList']);
+    Route::post('/add-like/{user_id}/{ad_id}', [LikeController::class, 'addLikeOnAdvertisement']);
+    Route::delete('/remove-like/{user_id}/{ad_id}', [LikeController::class, 'removeLikeFromAdvertisement']);
+    Route::get('/is-ad-liked/{user_id}/{ad_id}', [LikeController::class, 'checkIfAdvertisementIsLiked']);
+    Route::post('/add-complaint', [ComplaintController::class, 'addComplaint']);
 });
