@@ -525,6 +525,7 @@ class AdvertisementController extends Controller
             // معلومات صاحب الإعلان
             $owner["fullName"] = $ad->user->firstName . " " . $ad->user->lastName;
             $owner["photo"] = $ad->user->image;
+            $owner["id"] = $ad->user->id;
             $advertisementDetails["owner"] = $owner;
 
             $adPhotoes = array_map(function ($photo) {

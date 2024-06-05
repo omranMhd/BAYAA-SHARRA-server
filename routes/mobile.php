@@ -7,6 +7,8 @@ use App\Http\Controllers\AdvertisementController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ComplaintController;
+use App\Http\Controllers\ReplyController;
+use App\Http\Controllers\CommentController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -53,4 +55,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/remove-like/{user_id}/{ad_id}', [LikeController::class, 'removeLikeFromAdvertisement']);
     Route::get('/is-ad-liked/{user_id}/{ad_id}', [LikeController::class, 'checkIfAdvertisementIsLiked']);
     Route::post('/add-complaint', [ComplaintController::class, 'addComplaint']);
+    Route::get('/advertisement-comments/{ad_id}', [CommentController::class, 'advertisementComments']);
+    Route::post('/add-comment', [CommentController::class, 'addComment']);
+    Route::delete('/delete-comment/{comment_id}/{user_id}', [CommentController::class, 'deleteComment']);
+    Route::post('/add-reply', [ReplyController::class, 'addReply']);
+    Route::delete('/delete-reply/{reply_id}/{user_id}', [ReplyController::class, 'deleteReply']);
 });
