@@ -35,7 +35,7 @@ Route::get('/countries-info', [CountriesInfoController::class, 'getInfo']);
 Route::get('/main-categories', [CategoryController::class, 'mainCategories']);
 Route::get('/sub-categories/{id}', [CategoryController::class, 'subCategories']);
 // get all active advertisements to users 
-Route::get('/all-advertisements', [AdvertisementController::class, 'getAllAdvertisement']);
+Route::get('/all-advertisements/{user_id?}', [AdvertisementController::class, 'getAllAdvertisement']);
 
 //protected routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -60,4 +60,5 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/delete-comment/{comment_id}/{user_id}', [CommentController::class, 'deleteComment']);
     Route::post('/add-reply', [ReplyController::class, 'addReply']);
     Route::delete('/delete-reply/{reply_id}/{user_id}', [ReplyController::class, 'deleteReply']);
+    Route::get('/similar-ads/{ad_id}', [AdvertisementController::class, 'similarAds']);
 });

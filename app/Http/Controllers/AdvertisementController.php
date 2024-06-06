@@ -23,6 +23,7 @@ use App\Models\SparePartsVehicleFilters;
 use App\Models\VellaFilter;
 use Illuminate\Http\Request;
 use App\Http\Requests\AddNewAdvertisementRequest;
+use App\Models\Favorite;
 use Illuminate\Support\Facades\DB;
 
 class AdvertisementController extends Controller
@@ -318,7 +319,7 @@ class AdvertisementController extends Controller
             ], 500);
         }
     }
-    public function getAllAdvertisement()
+    public function getAllAdvertisement($user_id = null)
     {
         // here must return just active advertisements
 
@@ -326,10 +327,10 @@ class AdvertisementController extends Controller
         // return $advertisements;
 
 
-        $advertisements = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->get();
+        $advertisements = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->inRandomOrder()->get();
         $tempAd = [];
 
-        $newAds = $advertisements->map(function ($ad, $index) use ($advertisements, $tempAd) {
+        $newAds = $advertisements->map(function ($ad, $index) use ($advertisements, $tempAd, $user_id) {
             // dd($ad->toArray());
             $tempAd = $ad->toArray();
 
@@ -342,7 +343,14 @@ class AdvertisementController extends Controller
                 $tempAd['cardPhoto'] = $tempAd['cardPhoto']["url"];
             }
 
-
+            //هون اعرف اذا هذا الاعلان من ضمن القائمة المفضلة للمستخدم في حال ارسلنا رقمه
+            if ($user_id != null) {
+                if (Favorite::where('user_id', $user_id)->where('advertisement_id', $ad->id)->exists()) {
+                    $tempAd['isAdInFavoriteList'] = true;
+                } else {
+                    $tempAd['isAdInFavoriteList'] = false;
+                }
+            }
 
             // dd($tempAd);
 
@@ -629,5 +637,235 @@ class AdvertisementController extends Controller
                 "message" => "no ad with this id"
             ], 404);
         }
+    }
+    public function similarAds($ad_id)
+    {
+
+        // جيب الفئة يلي بينتمي الها هذا الإعلان
+        $category = Advertisement::find($ad_id)->category;
+        // جيب رقم الفئة يلي بينتمي لها هذا الإعلان
+        $category_id = $category->id;
+        // جيب كلشي اعلانات تابعة لهذه الفئة
+        $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->where('category_id', $category_id)->whereNot('id', $ad_id)->get();
+
+        // اذا مالقينا اعلانات لهي الفئة 
+        if ($similar_ids->count() == 0) {
+
+            // شوف الفئة الحالية أساسية ولا فرعية
+            $category_parent_id = $category->parent_id;
+
+            // الفئة الحالية أساسية
+            if ($category_parent_id ==  null) {
+                //  جيب أي 3 اعلانات
+                $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->whereNot('id', $ad_id)->get();
+            }
+            // الفئة الحالية فرعية
+            else {
+                // جيب الفئة الأساسية الأب للفئة الحالية يلي هي فرعية
+                $mainCategory = Category::find($category_parent_id);
+                // جيب ارقام الفئات الفرعية التابعة للفئة الأساسية السابقة
+                $childCategoriesIds =  $mainCategory->childCategories->map(function ($c) {
+                    return $c->id;
+                });
+
+                $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->whereIn('category_id', $childCategoriesIds)->whereNot('id', $ad_id)->get();
+
+                if ($similar_ids->count() == 0) {
+                    // رجع أي 3 اعلانات
+                    $similar_ids =  Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->whereNot('id', $ad_id)->take(3)->get();
+                }
+                //  else {
+                //     return $ads;
+                // }
+            }
+        }
+
+        // اذا لقيت اعلانات رجعها
+
+        // return $similar_ids;
+
+        $tempAd = [];
+        $newAds = $similar_ids->map(function ($ad, $index) use ($similar_ids, $tempAd) {
+            // dd($ad->toArray());
+            $tempAd = $ad->toArray();
+
+            //load images
+            $ad->load('images');
+
+            $tempAd['cardPhoto'] = $ad->images->select('url')->first();
+            if ($tempAd['cardPhoto'] != null) {
+
+                $tempAd['cardPhoto'] = $tempAd['cardPhoto']["url"];
+            }
+
+
+
+            // dd($tempAd);
+
+            //load category
+            $ad->load(['category' => function ($query) {
+                $query->select('id', 'name_en'); // Specify the columns to select for the 'books' relationship
+            }]);
+
+
+
+
+            if ($ad->category->name_en == "Apartment") {
+                $ad->load('apartementFilter');
+                $tempAd['price'] = $ad->apartementFilter?->price;
+                $tempAd['newPrice'] = $ad->apartementFilter?->newPrice;
+                $tempAd['currency'] = $ad->apartementFilter?->currency;
+                $tempAd['sellOrRent'] = $ad->apartementFilter?->sellOrRent;
+            }
+            // dd($tempAd);
+            if ($ad->category->name_en == "Farm") {
+
+                $ad->load('farmFilter');
+                $tempAd['price'] = $ad->farmFilter?->price;
+                $tempAd['newPrice'] = $ad->farmFilter?->newPrice;
+                $tempAd['currency'] = $ad->farmFilter?->currency;
+                $tempAd['sellOrRent'] = $ad->farmFilter?->sellOrRent;
+            }
+            if ($ad->category->name_en == "Land") {
+
+                $ad->load('landFilter');
+                $tempAd['price'] = $ad->landFilter?->price;
+                $tempAd['newPrice'] = $ad->landFilter?->newPrice;
+                $tempAd['currency'] = $ad->landFilter?->currency;
+                $tempAd['sellOrRent'] = $ad->landFilter?->sellOrRent;
+            }
+            if ($ad->category->name_en == "Commercial store") {
+
+                $ad->load('commercialStoreFilter');
+                $tempAd['price'] = $ad->commercialStoreFilter?->price;
+                $tempAd['newPrice'] = $ad->commercialStoreFilter?->newPrice;
+                $tempAd['currency'] = $ad->commercialStoreFilter?->currency;
+                $tempAd['sellOrRent'] = $ad->commercialStoreFilter?->sellOrRent;
+            }
+            if ($ad->category->name_en == "Office") {
+
+                $ad->load('officeFilter');
+                $tempAd['price'] = $ad->officeFilter?->price;
+                $tempAd['newPrice'] = $ad->officeFilter?->newPrice;
+                $tempAd['currency'] = $ad->officeFilter?->currency;
+                $tempAd['sellOrRent'] = $ad->officeFilter?->sellOrRent;
+            }
+            if ($ad->category->name_en == "Chalet") {
+
+                $ad->load('shalehFilter');
+                $tempAd['price'] = $ad->shalehFilter?->price;
+                $tempAd['newPrice'] = $ad->shalehFilter?->newPrice;
+                $tempAd['currency'] = $ad->shalehFilter?->currency;
+                $tempAd['sellOrRent'] = $ad->shalehFilter?->sellOrRent;
+            }
+            if ($ad->category->name_en == "Villa") {
+
+                $ad->load('vellaFilter');
+                $tempAd['price'] = $ad->vellaFilter?->price;
+                $tempAd['newPrice'] = $ad->vellaFilter?->newPrice;
+                $tempAd['currency'] = $ad->vellaFilter?->currency;
+                $tempAd['sellOrRent'] = $ad->vellaFilter?->sellOrRent;
+            }
+            if ($ad->category->name_en == "Spare parts") {
+
+                $ad->load('sparePartsVehicleFilter');
+                $tempAd['price'] = $ad->sparePartsVehicleFilter?->price;
+                $tempAd['newPrice'] = $ad->sparePartsVehicleFilter?->newPrice;
+                $tempAd['currency'] = $ad->sparePartsVehicleFilter?->currency;
+            }
+            if (in_array($ad->category->name_en, ["Car", "Motorcycle", "Truck", "Bus", "Jabala", "Crane", "Bulldozer"])) {
+
+                $ad->load('commonVehicleFilter');
+                $tempAd['price'] = $ad->commonVehicleFilter?->price;
+                $tempAd['newPrice'] = $ad->commonVehicleFilter?->newPrice;
+                $tempAd['currency'] = $ad->commonVehicleFilter?->currency;
+                $tempAd['sellOrRent'] = $ad->commonVehicleFilter?->sellOrRent;
+            }
+            if (in_array($ad->category->name_en, ["Mobile", "Tablet"])) {
+
+                $ad->load('mobTabFilter');
+                $tempAd['price'] = $ad->mobTabFilter?->price;
+                $tempAd['newPrice'] = $ad->mobTabFilter?->newPrice;
+                $tempAd['currency'] = $ad->mobTabFilter?->currency;
+            }
+            if ($ad->category->name_en == "Computer") {
+
+                $ad->load('computerFilter');
+                $tempAd['price'] = $ad->computerFilter?->price;
+                $tempAd['newPrice'] = $ad->computerFilter?->newPrice;
+                $tempAd['currency'] = $ad->computerFilter?->currency;
+            }
+            if ($ad->category->name_en == "Accessories") {
+
+                $ad->load('execoarFilter');
+                $tempAd['price'] = $ad->execoarFilter?->price;
+                $tempAd['newPrice'] = $ad->execoarFilter?->newPrice;
+                $tempAd['currency'] = $ad->execoarFilter?->currency;
+            }
+            if (in_array($ad->category->name_en, ["Refrigerator", "Washing Machine", "Fan", "Heater", "Blenders juicers", "Oven Microwave", "Screen", "Receiver", "Solar Energy"])) {
+
+                $ad->load('restDevicesFilter');
+                $tempAd['price'] = $ad->restDevicesFilter?->price;
+                $tempAd['newPrice'] = $ad->restDevicesFilter?->newPrice;
+                $tempAd['currency'] = $ad->restDevicesFilter?->currency;
+            }
+            if (in_array($ad->category->name_en, ["Bedroom", "Table", "Chair", "Bed", "Cabinet", "Sofa"])) {
+
+                $ad->load('furnitureFilter');
+                $tempAd['price'] = $ad->furnitureFilter?->price;
+                $tempAd['newPrice'] = $ad->furnitureFilter?->newPrice;
+                $tempAd['currency'] = $ad->furnitureFilter?->currency;
+            }
+            if (in_array($ad->category->name_en, ["Men", "Women", "children"])) {
+
+                $ad->load('clothesFasionFilter');
+                $tempAd['price'] = $ad->clothesFasionFilter?->price;
+                $tempAd['newPrice'] = $ad->clothesFasionFilter?->newPrice;
+                $tempAd['currency'] = $ad->clothesFasionFilter?->currency;
+            }
+            if (in_array($ad->category->name_en, [
+                "Livestock",
+                "Birds",
+                "Cat",
+                "Dog",
+                "Fish",
+                "gift",
+                "Perfume",
+                "Makeup",
+                "Watch",
+                "Glass",
+                "Restaurant",
+                "Cafe",
+                "Park",
+                "Bakery",
+                "Book",
+                "Stationery",
+                "Musical Instrument",
+                "Children equipment",
+                "Sports and clubs",
+                "Industrial equipment",
+            ])) {
+
+                $ad->load('generalAdditionalField');
+                $tempAd['price'] = $ad->generalAdditionalField?->price;
+                $tempAd['newPrice'] = $ad->generalAdditionalField?->newPrice;
+                $tempAd['currency'] = $ad->generalAdditionalField?->currency;
+            }
+
+            return $tempAd;
+
+            // return $ad->load('images', 'category');
+            // $photos = $ad->images;
+            // $advertisements[$index]->mainPhoto = $ad->images;
+            // $advertisements[$index]->categoryy = $category->name_en;
+            // return $advertisements[$index];
+        });
+
+        // return $newAds;
+
+        return response()->json([
+            "message" => "Get similar Advertisements done Successfully",
+            "data" => $newAds
+        ]);
     }
 }
