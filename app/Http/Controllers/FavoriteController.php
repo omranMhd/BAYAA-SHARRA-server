@@ -6,9 +6,11 @@ use App\Models\Advertisement;
 use App\Models\Favorite;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Http\Traits\ConvertAdvertForm;
 
 class FavoriteController extends Controller
 {
+    use ConvertAdvertForm;
     // هذا التابع يقوم باضافة اعلان ما الى القائمة المفضلة للمستخدم الحالي
     public function addAdvertisementToFavoriteList($user_id, $ad_id)
     {
@@ -107,5 +109,21 @@ class FavoriteController extends Controller
                 "isExist" => false
             ]);
         }
+    }
+    public function allFavoriteList($user_id)
+    {
+        $favorites =  Favorite::with(["advertisement" => function ($query) {
+            $query->select('id', 'created_at', 'address', 'title', 'category_id');
+        }])->where('user_id', $user_id)->get();
+
+        $ads = $favorites->map(function ($fav) {
+            return $fav->advertisement;
+        });
+
+        $ads = $this->convertToCardForm($ads, $user_id);
+        return response()->json([
+            "message" => "get favorites list done successfully",
+            "data" => $ads
+        ]);
     }
 }

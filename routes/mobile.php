@@ -60,5 +60,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/delete-comment/{comment_id}/{user_id}', [CommentController::class, 'deleteComment']);
     Route::post('/add-reply', [ReplyController::class, 'addReply']);
     Route::delete('/delete-reply/{reply_id}/{user_id}', [ReplyController::class, 'deleteReply']);
-    Route::get('/similar-ads/{ad_id}', [AdvertisementController::class, 'similarAds']);
+    Route::get('/similar-ads/{ad_id}/{user_id?}', [AdvertisementController::class, 'similarAds']);
+    Route::get('/favorite-ads/{user_id}', [FavoriteController::class, 'allFavoriteList']);
 });
