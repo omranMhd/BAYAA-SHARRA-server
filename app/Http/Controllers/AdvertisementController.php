@@ -328,19 +328,38 @@ class AdvertisementController extends Controller
     {
         // here must return just active advertisements
 
-        // $advertisements = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->paginate(15);
-        // return $advertisements;
+        $paginatedAdvertisements = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')/*->inRandomOrder()*/->paginate(10);
+        // dd($paginatedAdvertisements);
+        $convertedAds = $this->convertToCardForm(collect($paginatedAdvertisements->items()), $user_id);
 
+        $totalItems = Advertisement::count(); // Total items in the new data
+        $current_page = request()->get('page', 1); // Get the current page number, default to 1 if not present
+        $itemsPerPage = 10; // Define how many items you want to show per page
 
-        $advertisements = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->inRandomOrder()->get();
-
-
-        $newAds = $this->convertToCardForm($advertisements, $user_id);
+        $paginatedAds = new \Illuminate\Pagination\LengthAwarePaginator(
+            $convertedAds,
+            $totalItems,
+            $itemsPerPage,
+            $current_page,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+        );
 
         return response()->json([
             "message" => "Get Advertisements Successfully",
-            "data" => $newAds
+            "data" => $paginatedAds
         ]);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+        // $advertisements = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->inRandomOrder()->get();
+        // $convertedAds = $this->convertToCardForm($advertisements, $user_id);
+        // return response()->json([
+        //     "message" => "Get Advertisements Successfully",
+        //     "data" => $convertedAds
+        // ]);
     }
     //اعادة معلومات الاعلان وهي معلوماته الأساسية والصور وحقول الفلترة إن وجدت وبعض المعلومات عن صاحب الإعلان مثل الاسم والصورة والتقييم
     public function advertisementDetails($id)
