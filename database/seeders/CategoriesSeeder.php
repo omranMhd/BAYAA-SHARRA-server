@@ -30,7 +30,7 @@ class CategoriesSeeder extends Seeder
         ['id' => 15, 'name_en' => 'Apartment', 'name_ar' => 'شقة', 'parent_id' => 1], //شقة
         ['id' => 16, 'name_en' => 'Farm', 'name_ar' => 'مزرعة', 'parent_id' => 1], //مزرعة
         ['id' => 17, 'name_en' => 'Land', 'name_ar' => 'أرض', 'parent_id' => 1], //أرض
-        ['id' => 18, 'name_en' => 'Commercial store', 'name_ar' => 'محل تجاري', 'parent_id' => 1], //محل تجاري
+        ['id' => 18, 'name_en' => 'Store', 'name_ar' => 'محل تجاري', 'parent_id' => 1], //محل تجاري
         ['id' => 19, 'name_en' => 'Office', 'name_ar' => 'مكتب', 'parent_id' => 1], //مكتب
         ['id' => 20, 'name_en' => 'Chalet', 'name_ar' => 'شاليه', 'parent_id' => 1], //شاليه
         ['id' => 21, 'name_en' => 'Villa', 'name_ar' => 'فيلا', 'parent_id' => 1], //فيلا

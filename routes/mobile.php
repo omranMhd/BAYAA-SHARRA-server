@@ -7,6 +7,7 @@ use App\Http\Controllers\AdvertisementController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ComplaintController;
+use App\Http\Controllers\VehiclesInfoController;
 use App\Http\Controllers\ReplyController;
 use App\Http\Controllers\CommentController;
 use App\Models\User;
@@ -36,6 +37,8 @@ Route::get('/main-categories', [CategoryController::class, 'mainCategories']);
 Route::get('/sub-categories/{id}', [CategoryController::class, 'subCategories']);
 // get all active advertisements to users 
 Route::get('/all-advertisements/{user_id?}', [AdvertisementController::class, 'getAllAdvertisement']);
+Route::get('/advertisements-filter/{user_id?}', [AdvertisementController::class, 'advertisementsFilter']);
+Route::get('/vehicles-brands', [VehiclesInfoController::class, 'getVehicleBrands']);
 
 //protected routes
 Route::group(['middleware' => ['auth:sanctum']], function () {

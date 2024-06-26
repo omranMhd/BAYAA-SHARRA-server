@@ -90,7 +90,7 @@ class AdvertisementController extends Controller
                         "sellOrRent" => $request->filterFields_sellOrRent,
                         "paymentMethodRent" => $request->filterFields_paymentMethodRent,
                     ]);
-                } else if ($request->advertisement_category == "Commercial store") {
+                } else if ($request->advertisement_category == "Store") {
                     CommercialStoresFilter::create([
                         "advertisement_id" => $ad_id,
                         "area" => $request->filterFields_area,
@@ -328,7 +328,7 @@ class AdvertisementController extends Controller
     {
         // here must return just active advertisements
 
-        $paginatedAdvertisements = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')/*->inRandomOrder()*/->paginate(10);
+        $paginatedAdvertisements = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')/*->inRandomOrder()*/->orderBy('created_at', 'desc')->paginate(10);
         // dd($paginatedAdvertisements);
         $convertedAds = $this->convertToCardForm(collect($paginatedAdvertisements->items()), $user_id);
 
@@ -406,7 +406,7 @@ class AdvertisementController extends Controller
                 $advertisementDetails["additionalAttributes"] = $ad->farmFilter;
             } else if ($ad->category->name_en == "Land") {
                 $advertisementDetails["additionalAttributes"] = $ad->landFilter;
-            } else if ($ad->category->name_en == "Commercial store") {
+            } else if ($ad->category->name_en == "Store") {
                 $advertisementDetails["additionalAttributes"] = $ad->commercialStoreFilter;
             } else if ($ad->category->name_en == "Office") {
                 $advertisementDetails["additionalAttributes"] =  $ad->officeFilter;
@@ -493,7 +493,7 @@ class AdvertisementController extends Controller
         // جيب رقم الفئة يلي بينتمي لها هذا الإعلان
         $category_id = $category->id;
         // جيب كلشي اعلانات تابعة لهذه الفئة
-        $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->where('category_id', $category_id)->whereNot('id', $ad_id)->get();
+        $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->where('category_id', $category_id)->whereNot('id', $ad_id)->inRandomOrder()->get();
 
         // اذا مالقينا اعلانات لهي الفئة 
         if ($similar_ids->count() == 0) {
@@ -504,7 +504,7 @@ class AdvertisementController extends Controller
             // الفئة الحالية أساسية
             if ($category_parent_id ==  null) {
                 //  جيب أي 3 اعلانات
-                $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->whereNot('id', $ad_id)->get();
+                $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->whereNot('id', $ad_id)->inRandomOrder()->get();
             }
             // الفئة الحالية فرعية
             else {
@@ -515,11 +515,11 @@ class AdvertisementController extends Controller
                     return $c->id;
                 });
 
-                $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->whereIn('category_id', $childCategoriesIds)->whereNot('id', $ad_id)->get();
+                $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->whereIn('category_id', $childCategoriesIds)->whereNot('id', $ad_id)->inRandomOrder()->get();
 
                 if ($similar_ids->count() == 0) {
                     // رجع أي 3 اعلانات
-                    $similar_ids =  Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->whereNot('id', $ad_id)->take(3)->get();
+                    $similar_ids =  Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->whereNot('id', $ad_id)->take(3)->inRandomOrder()->get();
                 }
                 //  else {
                 //     return $ads;
@@ -538,5 +538,1590 @@ class AdvertisementController extends Controller
             "message" => "Get similar Advertisements done Successfully",
             "data" => $newAds
         ]);
+    }
+    public function advertisementsFilter(Request $request, $user_id = null)
+    {
+
+        // return $request;
+        if ($request->has('category')) {
+            $category_name = $request->query('category');
+            if (Category::where('name_en', $category_name)->exists()) {
+
+                $category = Category::where('name_en', $category_name)->first();
+                $category_id = $category->id;
+                $filterdAds = [];
+
+                // if category is main category
+                if ($category->parent_id == null) {
+                    // get subcategory
+                    $subCategories_ids = $category->childCategories->map(function ($c) {
+                        return $c->id;
+                    });
+
+                    // if this main category do not have subcategories
+                    if (count($subCategories_ids) == 0) {
+                        // for example  "Industrial equipment" category
+                        $filterdAds = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->where('category_id', $category_id)->get();
+                    }
+                    // if this main category  have subcategories
+                    else if (count($subCategories_ids) > 0) {
+                        // for example  "RealEstates" category
+                        $filterdAds = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->whereIn('category_id', $subCategories_ids)->get();
+                    }
+                }
+                // if category is sub category
+                else {
+                    $filterdAds = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->where('category_id', $category_id)->get();
+                }
+
+                // اذا معيار البلد موجود
+                if ($request->has('country')) {
+                    $country = $request->query('country');
+                    $filterdAds = $filterdAds->filter(function ($ads) use ($country) {
+                        return $country === json_decode($ads->address)->country;
+                    })->values();
+                    //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                    // indexes
+                }
+
+                // اذا معيار المدينة موجود
+                if ($request->has('city')) {
+                    $city = $request->query('city');
+                    $filterdAds = $filterdAds->filter(function ($ads) use ($city) {
+                        return $city === json_decode($ads->address)->city;
+                    })->values();
+                    //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                    // indexes
+                }
+
+                if ($category_name == "Apartment") {
+                    // اذا معيار بيع او اجار موجود
+                    if ($request->has('sellOrRent')) {
+                        $sellOrRent = $request->query('sellOrRent');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($sellOrRent) {
+                            $apartementFilter = ApartementFilter::where('advertisement_id', $ad->id)->first();
+                            return $sellOrRent === $apartementFilter->sellOrRent;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأدنى من المساحة موجود
+                    if ($request->has('areaFrom')) {
+                        $areaFrom = $request->query('areaFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaFrom) {
+                            $apartementFilter = ApartementFilter::where('advertisement_id', $ad->id)->first();
+                            return $areaFrom <= $apartementFilter->area;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الحد الأعلى من المساحة موجود
+                    if ($request->has('areaTo')) {
+                        $areaTo = $request->query('areaTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaTo) {
+                            $apartementFilter = ApartementFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->area <= $areaTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع الملكية موجود
+                    if ($request->has('ownership')) {
+                        $ownership = $request->query('ownership');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($ownership) {
+                            $apartementFilter = ApartementFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->ownership === $ownership;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = ApartementFilter::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = ApartementFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = ApartementFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الاتجاه موجود
+                    if ($request->has('direction')) {
+                        $direction = $request->query('direction');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($direction) {
+                            $apartementFilter = ApartementFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->direction === $direction;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار عدد الغرف موجود
+                    if ($request->has('roomCount')) {
+                        $roomCount = $request->query('roomCount');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($roomCount) {
+                            $apartementFilter = ApartementFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->roomCount == $roomCount;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار رقم الطابق موجود
+                    if ($request->has('floor')) {
+                        $floor = $request->query('floor');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($floor) {
+                            $apartementFilter = ApartementFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->floor == $floor;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع الأكساء موجود
+                    if ($request->has('cladding')) {
+                        $cladding = $request->query('cladding');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($cladding) {
+                            $apartementFilter = ApartementFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->cladding == $cladding;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+
+                if ($category_name == "Farm") {
+                    // اذا معيار بيع او اجار موجود
+                    if ($request->has('sellOrRent')) {
+                        $sellOrRent = $request->query('sellOrRent');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($sellOrRent) {
+                            $apartementFilter = FarmFilter::where('advertisement_id', $ad->id)->first();
+                            return $sellOrRent === $apartementFilter->sellOrRent;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأدنى من المساحة موجود
+                    if ($request->has('areaFrom')) {
+                        $areaFrom = $request->query('areaFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaFrom) {
+                            $apartementFilter = FarmFilter::where('advertisement_id', $ad->id)->first();
+                            return $areaFrom <= $apartementFilter->area;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الحد الأعلى من المساحة موجود
+                    if ($request->has('areaTo')) {
+                        $areaTo = $request->query('areaTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaTo) {
+                            $apartementFilter = FarmFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->area <= $areaTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع الملكية موجود
+                    if ($request->has('ownership')) {
+                        $ownership = $request->query('ownership');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($ownership) {
+                            $apartementFilter = FarmFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->ownership === $ownership;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = FarmFilter::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = FarmFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = FarmFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الاتجاه موجود
+                    if ($request->has('direction')) {
+                        $direction = $request->query('direction');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($direction) {
+                            $apartementFilter = FarmFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->direction === $direction;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار عدد الغرف موجود
+                    if ($request->has('roomCount')) {
+                        $roomCount = $request->query('roomCount');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($roomCount) {
+                            $apartementFilter = FarmFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->roomCount == $roomCount;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار عدد الطوابق موجود
+                    if ($request->has('floorsCount')) {
+                        $floorsCount = $request->query('floorsCount');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($floorsCount) {
+                            $apartementFilter = FarmFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->floorsCount == $floorsCount;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع الأكساء موجود
+                    if ($request->has('cladding')) {
+                        $cladding = $request->query('cladding');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($cladding) {
+                            $apartementFilter = FarmFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->cladding == $cladding;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if ($category_name == "Land") {
+                    // اذا معيار بيع او اجار موجود
+                    if ($request->has('sellOrRent')) {
+                        $sellOrRent = $request->query('sellOrRent');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($sellOrRent) {
+                            $apartementFilter = LandFilter::where('advertisement_id', $ad->id)->first();
+                            return $sellOrRent === $apartementFilter->sellOrRent;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأدنى من المساحة موجود
+                    if ($request->has('areaFrom')) {
+                        $areaFrom = $request->query('areaFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaFrom) {
+                            $apartementFilter = LandFilter::where('advertisement_id', $ad->id)->first();
+                            return $areaFrom <= $apartementFilter->area;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الحد الأعلى من المساحة موجود
+                    if ($request->has('areaTo')) {
+                        $areaTo = $request->query('areaTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaTo) {
+                            $apartementFilter = LandFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->area <= $areaTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع الملكية موجود
+                    if ($request->has('ownership')) {
+                        $ownership = $request->query('ownership');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($ownership) {
+                            $apartementFilter = LandFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->ownership === $ownership;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = LandFilter::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = LandFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = LandFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+
+                if ($category_name == "Store") {
+                    // اذا معيار بيع او اجار موجود
+                    if ($request->has('sellOrRent')) {
+                        $sellOrRent = $request->query('sellOrRent');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($sellOrRent) {
+                            $apartementFilter = CommercialStoresFilter::where('advertisement_id', $ad->id)->first();
+                            return $sellOrRent === $apartementFilter->sellOrRent;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأدنى من المساحة موجود
+                    if ($request->has('areaFrom')) {
+                        $areaFrom = $request->query('areaFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaFrom) {
+                            $apartementFilter = CommercialStoresFilter::where('advertisement_id', $ad->id)->first();
+                            return $areaFrom <= $apartementFilter->area;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الحد الأعلى من المساحة موجود
+                    if ($request->has('areaTo')) {
+                        $areaTo = $request->query('areaTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaTo) {
+                            $apartementFilter = CommercialStoresFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->area <= $areaTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع الملكية موجود
+                    if ($request->has('ownership')) {
+                        $ownership = $request->query('ownership');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($ownership) {
+                            $apartementFilter = CommercialStoresFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->ownership === $ownership;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = CommercialStoresFilter::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = CommercialStoresFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = CommercialStoresFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+
+                    // اذا معيار رقم الطابق موجود
+                    if ($request->has('floor')) {
+                        $floor = $request->query('floor');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($floor) {
+                            $apartementFilter = CommercialStoresFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->floor == $floor;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع الأكساء موجود
+                    if ($request->has('cladding')) {
+                        $cladding = $request->query('cladding');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($cladding) {
+                            $apartementFilter = ApartementFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->cladding == $cladding;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if ($category_name == "Office") {
+                    // اذا معيار بيع او اجار موجود
+                    if ($request->has('sellOrRent')) {
+                        $sellOrRent = $request->query('sellOrRent');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($sellOrRent) {
+                            $apartementFilter = OfficeFilter::where('advertisement_id', $ad->id)->first();
+                            return $sellOrRent === $apartementFilter->sellOrRent;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأدنى من المساحة موجود
+                    if ($request->has('areaFrom')) {
+                        $areaFrom = $request->query('areaFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaFrom) {
+                            $apartementFilter = OfficeFilter::where('advertisement_id', $ad->id)->first();
+                            return $areaFrom <= $apartementFilter->area;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من المساحة موجود
+                    if ($request->has('areaTo')) {
+                        $areaTo = $request->query('areaTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaTo) {
+                            $apartementFilter = OfficeFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->area <= $areaTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع الملكية موجود
+                    if ($request->has('ownership')) {
+                        $ownership = $request->query('ownership');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($ownership) {
+                            $apartementFilter = OfficeFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->ownership === $ownership;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = OfficeFilter::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = OfficeFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = OfficeFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار رقم الطابق موجود
+                    if ($request->has('floor')) {
+                        $floor = $request->query('floor');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($floor) {
+                            $apartementFilter = OfficeFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->floor == $floor;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع الأكساء موجود
+                    if ($request->has('cladding')) {
+                        $cladding = $request->query('cladding');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($cladding) {
+                            $apartementFilter = OfficeFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->cladding == $cladding;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الاتجاه موجود
+                    if ($request->has('direction')) {
+                        $direction = $request->query('direction');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($direction) {
+                            $apartementFilter = OfficeFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->direction === $direction;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار عدد الغرف موجود
+                    if ($request->has('roomCount')) {
+                        $roomCount = $request->query('roomCount');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($roomCount) {
+                            $apartementFilter = OfficeFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->roomCount === $roomCount;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if ($category_name == "Chalet") {
+                    // اذا معيار بيع او اجار موجود
+                    if ($request->has('sellOrRent')) {
+                        $sellOrRent = $request->query('sellOrRent');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($sellOrRent) {
+                            $apartementFilter = ShalehFilter::where('advertisement_id', $ad->id)->first();
+                            return $sellOrRent === $apartementFilter->sellOrRent;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأدنى من المساحة موجود
+                    if ($request->has('areaFrom')) {
+                        $areaFrom = $request->query('areaFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaFrom) {
+                            $apartementFilter = ShalehFilter::where('advertisement_id', $ad->id)->first();
+                            return $areaFrom <= $apartementFilter->area;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من المساحة موجود
+                    if ($request->has('areaTo')) {
+                        $areaTo = $request->query('areaTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaTo) {
+                            $apartementFilter = ShalehFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->area <= $areaTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع الملكية موجود
+                    if ($request->has('ownership')) {
+                        $ownership = $request->query('ownership');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($ownership) {
+                            $apartementFilter = ShalehFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->ownership === $ownership;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = ShalehFilter::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = ShalehFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = ShalehFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار رقم الطابق موجود
+                    if ($request->has('floor')) {
+                        $floor = $request->query('floor');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($floor) {
+                            $apartementFilter = ShalehFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->floor == $floor;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع الأكساء موجود
+                    if ($request->has('cladding')) {
+                        $cladding = $request->query('cladding');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($cladding) {
+                            $apartementFilter = ShalehFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->cladding == $cladding;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار عدد الغرف موجود
+                    if ($request->has('roomCount')) {
+                        $roomCount = $request->query('roomCount');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($roomCount) {
+                            $apartementFilter = ShalehFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->roomCount === $roomCount;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if ($category_name == "Villa") {
+                    // اذا معيار بيع او اجار موجود
+                    if ($request->has('sellOrRent')) {
+                        $sellOrRent = $request->query('sellOrRent');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($sellOrRent) {
+                            $apartementFilter = VellaFilter::where('advertisement_id', $ad->id)->first();
+                            return $sellOrRent === $apartementFilter->sellOrRent;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأدنى من المساحة موجود
+                    if ($request->has('areaFrom')) {
+                        $areaFrom = $request->query('areaFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaFrom) {
+                            $apartementFilter = VellaFilter::where('advertisement_id', $ad->id)->first();
+                            return $areaFrom <= $apartementFilter->area;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من المساحة موجود
+                    if ($request->has('areaTo')) {
+                        $areaTo = $request->query('areaTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($areaTo) {
+                            $apartementFilter = VellaFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->area <= $areaTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع الملكية موجود
+                    if ($request->has('ownership')) {
+                        $ownership = $request->query('ownership');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($ownership) {
+                            $apartementFilter = VellaFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->ownership === $ownership;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = VellaFilter::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = VellaFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = VellaFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الاتجاه موجود
+                    if ($request->has('direction')) {
+                        $direction = $request->query('direction');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($direction) {
+                            $apartementFilter = VellaFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->direction === $direction;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار عدد الغرف موجود
+                    if ($request->has('roomCount')) {
+                        $roomCount = $request->query('roomCount');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($roomCount) {
+                            $apartementFilter = VellaFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->roomCount === $roomCount;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع الأكساء موجود
+                    if ($request->has('cladding')) {
+                        $cladding = $request->query('cladding');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($cladding) {
+                            $apartementFilter = VellaFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->cladding == $cladding;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار عدد الطوابق موجود
+                    if ($request->has('floorsCount')) {
+                        $floorsCount = $request->query('floorsCount');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($floorsCount) {
+                            $apartementFilter = VellaFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->floorsCount == $floorsCount;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+
+                if (in_array($category_name, ["Car", "Motorcycle", "Truck", "Bus", "Jabala", "Crane", "Bulldozer"])) {
+                    // اذا معيار بيع او اجار موجود
+                    if ($request->has('sellOrRent')) {
+                        $sellOrRent = $request->query('sellOrRent');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($sellOrRent) {
+                            $apartementFilter = CommonVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $sellOrRent === $apartementFilter->sellOrRent;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = CommonVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = CommonVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = CommonVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+
+                    // اذا معيار ماركة المركبة موجود
+                    if ($request->has('vehicleBrand')) {
+                        $vehicleBrand = $request->query('vehicleBrand');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($vehicleBrand) {
+                            $apartementFilter = CommonVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->brand == $vehicleBrand;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار موديل المركبة موجود
+                    if ($request->has('vehicleModel')) {
+                        $vehicleModel = $request->query('vehicleModel');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($vehicleModel) {
+                            $apartementFilter = CommonVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->model == $vehicleModel;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار حالة الطلاء موجود
+                    if ($request->has('paintStatus')) {
+                        $paintStatus = $request->query('paintStatus');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($paintStatus) {
+                            $apartementFilter = CommonVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->paintStatus == $paintStatus;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار لون المركبة موجود
+                    if ($request->has('vehicleColor')) {
+                        $vehicleColor = $request->query('vehicleColor');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($vehicleColor) {
+                            $apartementFilter = CommonVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->color == $vehicleColor;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار ناقل الحركة موجود
+                    if ($request->has('gear')) {
+                        $gear = $request->query('gear');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($gear) {
+                            $apartementFilter = CommonVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->gear == $gear;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار الوقود موجود
+                    if ($request->has('fuel')) {
+                        $fuel = $request->query('fuel');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($fuel) {
+                            $apartementFilter = CommonVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->fuel == $fuel;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = CommonVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = CommonVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = CommonVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                } else if ($category_name === "Spare parts") {
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = SparePartsVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = SparePartsVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = SparePartsVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع المركبة التي تصلح لها قطعة الغيار موجود
+                    if ($request->has('sparePartVehicleType')) {
+                        $sparePartVehicleType = $request->query('sparePartVehicleType');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($sparePartVehicleType) {
+                            $apartementFilter = SparePartsVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->vehicleType === $sparePartVehicleType;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار حالة قطعة الغيار موجود
+                    if ($request->has('sparePartStatus')) {
+                        $sparePartStatus = $request->query('sparePartStatus');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($sparePartStatus) {
+                            $apartementFilter = SparePartsVehicleFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->status === $sparePartStatus;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if ($category_name === "Mobile" || $category_name === "Tablet") {
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = MobTabFilter::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = MobTabFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = MobTabFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار ماركة الموبايل او لتاب موجود
+                    if ($request->has('mobOrTabBrand')) {
+                        $mobOrTabBrand = $request->query('mobOrTabBrand');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($mobOrTabBrand) {
+                            $apartementFilter = MobTabFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->brand === $mobOrTabBrand;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار فئة الموبايل او التاب موجود
+                    if ($request->has('mobOrTabCategory')) {
+                        $mobOrTabCategory = $request->query('mobOrTabCategory');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($mobOrTabCategory) {
+                            $apartementFilter = MobTabFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->category === $mobOrTabCategory;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار حالة الجهاز موجود
+                    if ($request->has('deviceStatus')) {
+                        $deviceStatus = $request->query('deviceStatus');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($deviceStatus) {
+                            $apartementFilter = MobTabFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->status === $deviceStatus;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار حالة البطارية موجود
+                    if ($request->has('batteryStatus')) {
+                        $batteryStatus = $request->query('batteryStatus');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($batteryStatus) {
+                            $apartementFilter = MobTabFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->batteryStatus === $batteryStatus;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if ($category_name === "Computer") {
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = ComputerFilter::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = ComputerFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = ComputerFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار ماركة الكومبوتر موجود
+                    if ($request->has('computerBrand')) {
+                        $computerBrand = $request->query('computerBrand');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($computerBrand) {
+                            $apartementFilter = ComputerFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->brand === $computerBrand;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار فئة الكومبيوتر موجود
+                    if ($request->has('computerCategory')) {
+                        $computerCategory = $request->query('computerCategory');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($computerCategory) {
+                            $apartementFilter = ComputerFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->category === $computerCategory;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار حالة الجهاز موجود
+                    if ($request->has('deviceStatus')) {
+                        $deviceStatus = $request->query('deviceStatus');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($deviceStatus) {
+                            $apartementFilter = ComputerFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->status === $deviceStatus;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار المعالج موجود
+                    if ($request->has('processor')) {
+                        $processor = $request->query('processor');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($processor) {
+                            $apartementFilter = ComputerFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->processor === $processor;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع الشاشة موجود
+                    if ($request->has('screenType')) {
+                        $screenType = $request->query('screenType');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($screenType) {
+                            $apartementFilter = ComputerFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->screenType === $screenType;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار قياس الشاشة موجود
+                    if ($request->has('screenSize')) {
+                        $screenSize = $request->query('screenSize');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($screenSize) {
+                            $apartementFilter = ComputerFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->screenSize === $screenSize;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if ($category_name === "Accessories") {
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = ExecoarFilter::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = ExecoarFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = ExecoarFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع الجهاز الذي تصلح له موجود
+                    if ($request->has('accessoriesDeviceType')) {
+                        $accessoriesDeviceType = $request->query('accessoriesDeviceType');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($accessoriesDeviceType) {
+                            $apartementFilter = ExecoarFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->deviceType === $accessoriesDeviceType;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if (in_array(
+                    $category_name,
+                    ["Refrigerator", "Washing Machine", "Fan", "Heater", "Blenders juicers", "Oven Microwave", "Screen", "Receiver", "Solar Energy"]
+                )) {
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = RestDevicesFilters::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = RestDevicesFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = RestDevicesFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار حالة الجهاز موجود
+                    if ($request->has('deviceStatus')) {
+                        $deviceStatus = $request->query('deviceStatus');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($deviceStatus) {
+                            $apartementFilter = RestDevicesFilters::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->status === $deviceStatus;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if (in_array(
+                    $category_name,
+                    ["Bedroom", "Table", "Chair", "Bed", "Cabinet", "Sofa"]
+                )) {
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = FurnitureFilter::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = FurnitureFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = FurnitureFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار مادة الصنع موجود
+                    if ($request->has('material')) {
+                        $material = $request->query('material');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($material) {
+                            $apartementFilter = FurnitureFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->material === $material;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار حالة الأثاث موجود
+                    if ($request->has('furnitureStatus')) {
+                        $furnitureStatus = $request->query('furnitureStatus');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($furnitureStatus) {
+                            $apartementFilter = FurnitureFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->status === $furnitureStatus;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if (in_array(
+                    $category_name,
+                    ["Men", "Women", "children"]
+                )) {
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = ClothesFasionFilter::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = ClothesFasionFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = ClothesFasionFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار حالة اللباس موجود
+                    if ($request->has('clothesStatus')) {
+                        $clothesStatus = $request->query('clothesStatus');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($clothesStatus) {
+                            $apartementFilter = FurnitureFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->status === $clothesStatus;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                    // اذا معيار نوع اللباس موجود
+                    if ($request->has('clothesType')) {
+                        $clothesType = $request->query('clothesType');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($clothesType) {
+                            $apartementFilter = FurnitureFilter::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->type === $clothesType;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if (in_array(
+                    $category_name,
+                    ["Livestock", "Birds", "Cat", "Dog", "Fish"]
+                )) {
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if (in_array(
+                    $category_name,
+                    ["gift", "Perfume", "Makeup", "Watch", "Glass"]
+                )) {
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if (in_array(
+                    $category_name,
+                    ["Restaurant", "Cafe", "Park", "Bakery"]
+                )) {
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if (in_array(
+                    $category_name,
+                    ["Book", "Stationery", "Musical Instrument"]
+                )) {
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+                if (in_array(
+                    $category_name,
+                    ["Industrial equipment", "Sports and clubs", "Children equipment"]
+                )) {
+                    // اذا معيار الحد الأدنى من السعر موجود
+                    if ($request->has('priceFrom')) {
+                        $priceFrom = $request->query('priceFrom');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceFrom) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $priceFrom <= $apartementFilter->price;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار الحد الأعلى من السعر موجود
+                    if ($request->has('priceTo')) {
+                        $priceTo = $request->query('priceTo');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($priceTo) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->price <= $priceTo;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+
+                    // اذا معيار نوع العملة موجود
+                    if ($request->has('currency')) {
+                        $currency = $request->query('currency');
+                        $filterdAds = $filterdAds->filter(function ($ad) use ($currency) {
+                            $apartementFilter = GeneralAdditionalFields::where('advertisement_id', $ad->id)->first();
+                            return $apartementFilter->currency === $currency;
+                        })->values();
+                        //هون استدعيت هذا التابع مشان ترجع النتيجة بدون
+                        // indexes
+                    }
+                }
+
+
+
+
+
+
+
+
+
+                // return $filterdAds;
+
+
+
+                $convertedAds = $this->convertToCardForm($filterdAds, $user_id);
+
+
+                return response()->json([
+                    "message" => "Get filterd Advertisements done Successfully",
+                    "data" => $convertedAds
+                ]);
+            } else {
+                return response()->json([
+                    "message" => "no category with this name"
+                ], 404);
+            }
+        } else {
+            return response()->json([
+                "message" => "request must have category field"
+            ], 400);
+        }
     }
 }

@@ -13,7 +13,7 @@ trait ConvertAdvertForm
     use CountriesInfo;
     //هذا التابع يقوم بأخذ عدة اعلانات وتحوليها لشكل فيه مغلومات اضافية تناسب العرض ضمن كارد
     //طبعا كل اعلان هو عبارة عن موديل يمثل ريكورد من جدول الاعلانات
-    public function convertToCardForm($advertisements, $user_id)
+    public function convertToCardForm($advertisements, $user_id = null)
     {
         $tempAd = [];
         $newAds = $advertisements->map(function ($ad, $index) use ($advertisements, $tempAd, $user_id) {
@@ -78,7 +78,7 @@ trait ConvertAdvertForm
                 $tempAd['sellOrRent'] = $ad->landFilter?->sellOrRent;
                 $tempAd['paymentMethodRent'] = $ad->landFilter?->paymentMethodRent;
             }
-            if ($ad->category->name_en == "Commercial store") {
+            if ($ad->category->name_en == "Store") {
 
                 $ad->load('commercialStoreFilter');
                 $tempAd['price'] = $ad->commercialStoreFilter?->price;
