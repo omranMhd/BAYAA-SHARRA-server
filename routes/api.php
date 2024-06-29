@@ -39,6 +39,7 @@ Route::get('/sub-categories/{id}', [CategoryController::class, 'subCategories'])
 // get all active advertisements to users 
 Route::get('/all-advertisements/{user_id?}', [AdvertisementController::class, 'getAllAdvertisement']);
 Route::get('/advertisements-filter/{user_id?}', [AdvertisementController::class, 'advertisementsFilter']);
+Route::get('/advertisements-search/{user_id?}', [AdvertisementController::class, 'advertisementsSearch']);
 Route::get('/vehicles-brands', [VehiclesInfoController::class, 'getVehicleBrands']);
 
 //protected routes

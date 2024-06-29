@@ -2124,4 +2124,33 @@ class AdvertisementController extends Controller
             ], 400);
         }
     }
+    public function advertisementsSearch(Request $request, $user_id = null)
+    {
+        // return $request->query("search");
+
+        $wordsArray = explode(" ", $request->query("search"));
+        // return $wordsArray;
+        $query = Advertisement::query();
+        foreach ($wordsArray as $word) {
+            $query->where('title', 'like', "%{$word}%");
+        }
+        $ads = $query->select('id', 'created_at', 'address', 'title', 'category_id')->get();
+
+        if ($ads->count() == 0) {
+            foreach ($wordsArray as $word) {
+                $query->orWhere('title', 'like', "%{$word}%");
+            }
+        }
+        $ads = $query->select('id', 'created_at', 'address', 'title', 'category_id')->get();
+
+
+        $convertedAds = $this->convertToCardForm($ads, $user_id);
+
+
+        return response()->json([
+            "message" => "Get searched Advertisements done Successfully",
+            "data" => $convertedAds
+        ]);
+        return $ads;
+    }
 }
