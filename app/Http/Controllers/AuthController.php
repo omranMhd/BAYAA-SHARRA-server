@@ -27,11 +27,13 @@ class AuthController extends Controller
     {
 
         $activation_code = $this->generateCode();
-        $verified_by = $request->has('email') ? 'email' : 'phone';
+        $verified_by =  "email";
+        // $verified_by = $request->has('email') ? 'email' : 'phone';
         $user_id = null;
 
 
         if ($verified_by == 'email') {
+            //هون لازم اعمل معالجة للترانزكشن لانو عم اعمل انشاء بجدولين 
             $user_id = User::create([
                 'firstName' => $request->firstName,
                 'lastName' => $request->lastName,
@@ -44,26 +46,26 @@ class AuthController extends Controller
                 'user_id' => $user_id,
                 'code' => $activation_code,
                 'is_used' => false,
-                'verified_by' => $verified_by,
+                'verified_by' => $request->email,
             ]);
 
             // send activation code by email
             Mail::to($request->email)->send(new EmailVerification($activation_code));
         } else if ($verified_by == 'phone') {
-            $user_id = User::create([
-                'firstName' => $request->firstName,
-                'lastName' => $request->lastName,
-                'phone' => $request->phone,
-                'password' => Hash::make($request->password),
-                'address' => $request->address
-            ])->id;
+            // $user_id = User::create([
+            //     'firstName' => $request->firstName,
+            //     'lastName' => $request->lastName,
+            //     'phone' => $request->phone,
+            //     'password' => Hash::make($request->password),
+            //     'address' => $request->address
+            // ])->id;
 
-            ActivationCode::create([
-                'user_id' => $user_id,
-                'code' => $activation_code,
-                'is_used' => false,
-                'verified_by' => $verified_by,
-            ]);
+            // ActivationCode::create([
+            //     'user_id' => $user_id,
+            //     'code' => $activation_code,
+            //     'is_used' => false,
+            //     'verified_by' => $verified_by,
+            // ]);
 
             // send activation code by SMS
 
@@ -85,7 +87,9 @@ class AuthController extends Controller
     public function login(LoginUserRequest $request)
     {
 
-        ($request->has('email')) ? $authKey = 'email' : $authKey = 'phone';
+        // ($request->has('email')) ? $authKey = 'email' : $authKey = 'phone';
+
+        $authKey = 'email';
 
         $credentials = $request->only($authKey, 'password');
 
@@ -138,19 +142,21 @@ class AuthController extends Controller
 
                 $user = User::find($request->user_id);
 
-                if ($activationCode->verified_by == 'email') {
-                    $user->email_verified_at = now()->timestamp;
-                    $user->save();
-                } else {
-                    $user->phone_verified_at = now()->timestamp;
-                    $user->save();
-                }
+                // if ($activationCode->verified_by == 'email') {
+                //     $user->email_verified_at = now()->timestamp;
+                //     $user->save();
+                // } else {
+                //     $user->phone_verified_at = now()->timestamp;
+                //     $user->save();
+                // }
+                $user->email_verified_at = now()->timestamp;
+                $user->save();
 
                 DB::commit();
                 return response()->json(['message' => 'verification done', 'data' => $user]);
             } catch (\Exception $e) {
                 DB::rollBack();
-                return response()->json(['message' => 'verification failed'], 402);
+                return response()->json(['message' => 'verification failed', "dataError" => $e], 402);
             }
         } else {
             return response()->json(['message' => 'invalid verification code'], 400);
