@@ -27,6 +27,8 @@ use App\Models\Favorite;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\ConvertAdvertForm;
 use App\Http\Traits\CountriesInfo;
+use App\Models\Complaint;
+use Illuminate\Support\Facades\Storage;
 
 class AdvertisementController extends Controller
 {
@@ -2152,5 +2154,500 @@ class AdvertisementController extends Controller
             "data" => $convertedAds
         ]);
         return $ads;
+    }
+    public function getAllUserAdvertisements($user_id)
+    {
+        $advertisements = Advertisement::with("category")->select("id", "category_id", "title", "status", "paidFor", "address")->where("user_id", $user_id)->get();
+        $tempAd = [];
+        $newAds = $advertisements->map(function ($ad, $index) use ($tempAd, $user_id) {
+            // dd($ad->toArray());
+            $tempAd = $ad->toArray();
+
+
+            $tempAd["address"] = $this->getTranslatedCountryAndCityName(json_decode($tempAd["address"])->country, json_decode($tempAd["address"])->city);
+
+
+
+            // //load category
+            // $ad->load(['category' => function ($query) {
+            //     $query->select('id', 'name_en'); // Specify the columns to select for the 'books' relationship
+            // }]);
+
+
+
+
+            if ($ad->category->name_en == "Apartment") {
+                $ad->load('apartementFilter');
+                $tempAd['price'] = $ad->apartementFilter?->price;
+                $tempAd['newPrice'] = $ad->apartementFilter?->newPrice;
+                $tempAd['currency'] = $ad->apartementFilter?->currency;
+            }
+            // dd($tempAd);
+            if ($ad->category->name_en == "Farm") {
+
+                $ad->load('farmFilter');
+                $tempAd['price'] = $ad->farmFilter?->price;
+                $tempAd['newPrice'] = $ad->farmFilter?->newPrice;
+                $tempAd['currency'] = $ad->farmFilter?->currency;
+            }
+            if ($ad->category->name_en == "Land") {
+
+                $ad->load('landFilter');
+                $tempAd['price'] = $ad->landFilter?->price;
+                $tempAd['newPrice'] = $ad->landFilter?->newPrice;
+                $tempAd['currency'] = $ad->landFilter?->currency;
+            }
+            if ($ad->category->name_en == "Store") {
+
+                $ad->load('commercialStoreFilter');
+                $tempAd['price'] = $ad->commercialStoreFilter?->price;
+                $tempAd['newPrice'] = $ad->commercialStoreFilter?->newPrice;
+                $tempAd['currency'] = $ad->commercialStoreFilter?->currency;
+            }
+            if ($ad->category->name_en == "Office") {
+
+                $ad->load('officeFilter');
+                $tempAd['price'] = $ad->officeFilter?->price;
+                $tempAd['newPrice'] = $ad->officeFilter?->newPrice;
+                $tempAd['currency'] = $ad->officeFilter?->currency;
+            }
+            if ($ad->category->name_en == "Chalet") {
+
+                $ad->load('shalehFilter');
+                $tempAd['price'] = $ad->shalehFilter?->price;
+                $tempAd['newPrice'] = $ad->shalehFilter?->newPrice;
+                $tempAd['currency'] = $ad->shalehFilter?->currency;
+            }
+            if ($ad->category->name_en == "Villa") {
+
+                $ad->load('vellaFilter');
+                $tempAd['price'] = $ad->vellaFilter?->price;
+                $tempAd['newPrice'] = $ad->vellaFilter?->newPrice;
+                $tempAd['currency'] = $ad->vellaFilter?->currency;
+            }
+            if ($ad->category->name_en == "Spare parts") {
+
+                $ad->load('sparePartsVehicleFilter');
+                $tempAd['price'] = $ad->sparePartsVehicleFilter?->price;
+                $tempAd['newPrice'] = $ad->sparePartsVehicleFilter?->newPrice;
+                $tempAd['currency'] = $ad->sparePartsVehicleFilter?->currency;
+            }
+            if (in_array($ad->category->name_en, ["Car", "Motorcycle", "Truck", "Bus", "Jabala", "Crane", "Bulldozer"])) {
+
+                $ad->load('commonVehicleFilter');
+                $tempAd['price'] = $ad->commonVehicleFilter?->price;
+                $tempAd['newPrice'] = $ad->commonVehicleFilter?->newPrice;
+                $tempAd['currency'] = $ad->commonVehicleFilter?->currency;
+            }
+            if (in_array($ad->category->name_en, ["Mobile", "Tablet"])) {
+
+                $ad->load('mobTabFilter');
+                $tempAd['price'] = $ad->mobTabFilter?->price;
+                $tempAd['newPrice'] = $ad->mobTabFilter?->newPrice;
+                $tempAd['currency'] = $ad->mobTabFilter?->currency;
+            }
+            if ($ad->category->name_en == "Computer") {
+
+                $ad->load('computerFilter');
+                $tempAd['price'] = $ad->computerFilter?->price;
+                $tempAd['newPrice'] = $ad->computerFilter?->newPrice;
+                $tempAd['currency'] = $ad->computerFilter?->currency;
+            }
+            if ($ad->category->name_en == "Accessories") {
+
+                $ad->load('execoarFilter');
+                $tempAd['price'] = $ad->execoarFilter?->price;
+                $tempAd['newPrice'] = $ad->execoarFilter?->newPrice;
+                $tempAd['currency'] = $ad->execoarFilter?->currency;
+            }
+            if (in_array($ad->category->name_en, ["Refrigerator", "Washing Machine", "Fan", "Heater", "Blenders juicers", "Oven Microwave", "Screen", "Receiver", "Solar Energy"])) {
+
+                $ad->load('restDevicesFilter');
+                $tempAd['price'] = $ad->restDevicesFilter?->price;
+                $tempAd['newPrice'] = $ad->restDevicesFilter?->newPrice;
+                $tempAd['currency'] = $ad->restDevicesFilter?->currency;
+            }
+            if (in_array($ad->category->name_en, ["Bedroom", "Table", "Chair", "Bed", "Cabinet", "Sofa"])) {
+
+                $ad->load('furnitureFilter');
+                $tempAd['price'] = $ad->furnitureFilter?->price;
+                $tempAd['newPrice'] = $ad->furnitureFilter?->newPrice;
+                $tempAd['currency'] = $ad->furnitureFilter?->currency;
+            }
+            if (in_array($ad->category->name_en, ["Men", "Women", "children"])) {
+
+                $ad->load('clothesFasionFilter');
+                $tempAd['price'] = $ad->clothesFasionFilter?->price;
+                $tempAd['newPrice'] = $ad->clothesFasionFilter?->newPrice;
+                $tempAd['currency'] = $ad->clothesFasionFilter?->currency;
+            }
+            if (in_array($ad->category->name_en, [
+                "Livestock",
+                "Birds",
+                "Cat",
+                "Dog",
+                "Fish",
+                "gift",
+                "Perfume",
+                "Makeup",
+                "Watch",
+                "Glass",
+                "Restaurant",
+                "Cafe",
+                "Park",
+                "Bakery",
+                "Book",
+                "Stationery",
+                "Musical Instrument",
+                "Children equipment",
+                "Sports and clubs",
+                "Industrial equipment",
+            ])) {
+
+                $ad->load('generalAdditionalField');
+                $tempAd['price'] = $ad->generalAdditionalField?->price;
+                $tempAd['newPrice'] = $ad->generalAdditionalField?->newPrice;
+                $tempAd['currency'] = $ad->generalAdditionalField?->currency;
+            }
+
+            return $tempAd;
+        });
+
+        return response()->json([
+            "message" => "Get User Advertisements Successfully",
+            "data" => $newAds
+        ]);
+    }
+    public function deleteAdvertisement($id)
+    {
+        $ad = Advertisement::find($id);
+        if ($ad) {
+            // $ad->delete();
+
+
+            //حذف الشكاوي المتعلقة بهذا الأعلان
+            $ad->complaints->map(function ($c) {
+                $c->delete();
+            });
+
+            //حذف الاعلان هذا من القوائم المفضلة
+            $ad->favorites->map(function ($c) {
+                $c->delete();
+            });
+
+            //حذف الاعجابات المتعلقة بهذا الاعلان
+            // return $ad->likes;
+            $ad->likes->map(function ($c) {
+                $c->delete();
+            });
+
+            //حذف التعليقات والردود المتعلقة بها ان وجدت
+            // return $ad->comments->load('reply');
+            $ad->comments->load('reply')->map(function ($c) {
+                if ($c->reply != null) {
+                    $c->reply->delete();
+                }
+                $c->delete();
+            });
+
+            //حذف مسارات الصور وملفاتها
+            // return $ad->images;
+            $ad->images->map(function ($c) {
+                //احذف ملف الصورة
+                Storage::disk('public')->delete($c->url);
+
+                //بعدين احذف مسارها من الجدول
+                $c->delete();
+            });
+
+            //حذف البيانات الاضافية من جداول الفلاتر
+
+            $ad->apartementFilter?->delete();
+            $ad->farmFilter?->delete();
+            $ad->landFilter?->delete();
+            $ad->commercialStoreFilter?->delete();
+            $ad->officeFilter?->delete();
+            $ad->shalehFilter?->delete();
+            $ad->vellaFilter?->delete();
+            $ad->commonVehicleFilter?->delete();
+            $ad->sparePartsVehicleFilter?->delete();
+            $ad->mobTabFilter?->delete();
+            $ad->computerFilter?->delete();
+            $ad->execoarFilter?->delete();
+            $ad->restDevicesFilter?->delete();
+            $ad->furnitureFilter?->delete();
+            $ad->clothesFasionFilter?->delete();
+            $ad->generalAdditionalField?->delete();
+
+
+            //حذف الاعلان نفسو
+            $ad->delete();
+
+            return response()->json([
+                "message" => "delete done"
+            ]);
+        } else {
+
+            return response()->json([
+                "message" => "No Advertisement with this id"
+            ], 404);
+        }
+    }
+    public function updateAdvertisement(Request $request, $id)
+    {
+        $ad = Advertisement::find($id);
+
+        if ($ad) {
+            if ($request->has("adStatus") && $request->adStatus === "closed") {
+                if ($ad->status == "active" || $ad->status == "pending") {
+                    $ad->status = $request->adStatus;
+                    $ad->save();
+                }
+            }
+            if ($request->has("price")) {
+
+                if ($ad->apartementFilter != null) {
+                    $ad->apartementFilter->price = $request->price;
+                    $ad->apartementFilter->save();
+                }
+                if ($ad->farmFilter != null) {
+                    $ad->farmFilter->price = $request->price;
+                    $ad->farmFilter->save();
+                }
+                if ($ad->landFilter != null) {
+                    $ad->landFilter->price = $request->price;
+                    $ad->landFilter->save();
+                }
+                if ($ad->commercialStoreFilter != null) {
+                    $ad->commercialStoreFilter->price = $request->price;
+                    $ad->commercialStoreFilter->save();
+                }
+                if ($ad->officeFilter != null) {
+                    $ad->officeFilter->price = $request->price;
+                    $ad->officeFilter->save();
+                }
+                if ($ad->shalehFilter != null) {
+                    $ad->shalehFilter->price = $request->price;
+                    $ad->shalehFilter->save();
+                }
+                if ($ad->vellaFilter != null) {
+                    $ad->vellaFilter->price = $request->price;
+                    $ad->vellaFilter->save();
+                }
+                if ($ad->commonVehicleFilter != null) {
+                    $ad->commonVehicleFilter->price = $request->price;
+                    $ad->commonVehicleFilter->save();
+                }
+                if ($ad->sparePartsVehicleFilter != null) {
+                    $ad->sparePartsVehicleFilter->price = $request->price;
+                    $ad->sparePartsVehicleFilter->save();
+                }
+                if ($ad->mobTabFilter != null) {
+                    $ad->mobTabFilter->price = $request->price;
+                    $ad->mobTabFilter->save();
+                }
+                if ($ad->mobTabFilter != null) {
+                    $ad->mobTabFilter->price = $request->price;
+                    $ad->mobTabFilter->save();
+                }
+                if ($ad->computerFilter != null) {
+                    $ad->computerFilter->price = $request->price;
+                    $ad->computerFilter->save();
+                }
+                if ($ad->execoarFilter != null) {
+                    $ad->execoarFilter->price = $request->price;
+                    $ad->execoarFilter->save();
+                }
+                if ($ad->execoarFilter != null) {
+                    $ad->execoarFilter->price = $request->price;
+                    $ad->execoarFilter->save();
+                }
+                if ($ad->restDevicesFilter != null) {
+                    $ad->restDevicesFilter->price = $request->price;
+                    $ad->restDevicesFilter->save();
+                }
+                if ($ad->restDevicesFilter != null) {
+                    $ad->restDevicesFilter->price = $request->price;
+                    $ad->restDevicesFilter->save();
+                }
+                if ($ad->furnitureFilter != null) {
+                    $ad->furnitureFilter->price = $request->price;
+                    $ad->furnitureFilter->save();
+                }
+                if ($ad->clothesFasionFilter != null) {
+                    $ad->clothesFasionFilter->price = $request->price;
+                    $ad->clothesFasionFilter->save();
+                }
+                if ($ad->generalAdditionalField != null) {
+                    $ad->generalAdditionalField->price = $request->price;
+                    $ad->generalAdditionalField->save();
+                }
+            }
+            if ($request->has("newPrice")) {
+                if ($ad->apartementFilter != null) {
+                    $ad->apartementFilter->newPrice = $request->newPrice;
+                    $ad->apartementFilter->save();
+                }
+                if ($ad->farmFilter != null) {
+                    $ad->farmFilter->newPrice = $request->newPrice;
+                    $ad->farmFilter->save();
+                }
+                if ($ad->landFilter != null) {
+                    $ad->landFilter->newPrice = $request->newPrice;
+                    $ad->landFilter->save();
+                }
+                if ($ad->commercialStoreFilter != null) {
+                    $ad->commercialStoreFilter->newPrice = $request->newPrice;
+                    $ad->commercialStoreFilter->save();
+                }
+                if ($ad->officeFilter != null) {
+                    $ad->officeFilter->newPrice = $request->newPrice;
+                    $ad->officeFilter->save();
+                }
+                if ($ad->shalehFilter != null) {
+                    $ad->shalehFilter->newPrice = $request->newPrice;
+                    $ad->shalehFilter->save();
+                }
+                if ($ad->vellaFilter != null) {
+                    $ad->vellaFilter->newPrice = $request->newPrice;
+                    $ad->vellaFilter->save();
+                }
+                if ($ad->commonVehicleFilter != null) {
+                    $ad->commonVehicleFilter->newPrice = $request->newPrice;
+                    $ad->commonVehicleFilter->save();
+                }
+                if ($ad->sparePartsVehicleFilter != null) {
+                    $ad->sparePartsVehicleFilter->newPrice = $request->newPrice;
+                    $ad->sparePartsVehicleFilter->save();
+                }
+                if ($ad->mobTabFilter != null) {
+                    $ad->mobTabFilter->newPrice = $request->newPrice;
+                    $ad->mobTabFilter->save();
+                }
+                if ($ad->mobTabFilter != null) {
+                    $ad->mobTabFilter->newPrice = $request->newPrice;
+                    $ad->mobTabFilter->save();
+                }
+                if ($ad->computerFilter != null) {
+                    $ad->computerFilter->newPrice = $request->newPrice;
+                    $ad->computerFilter->save();
+                }
+                if ($ad->execoarFilter != null) {
+                    $ad->execoarFilter->newPrice = $request->newPrice;
+                    $ad->execoarFilter->save();
+                }
+                if ($ad->execoarFilter != null) {
+                    $ad->execoarFilter->newPrice = $request->newPrice;
+                    $ad->execoarFilter->save();
+                }
+                if ($ad->restDevicesFilter != null) {
+                    $ad->restDevicesFilter->newPrice = $request->newPrice;
+                    $ad->restDevicesFilter->save();
+                }
+                if ($ad->restDevicesFilter != null) {
+                    $ad->restDevicesFilter->newPrice = $request->newPrice;
+                    $ad->restDevicesFilter->save();
+                }
+                if ($ad->furnitureFilter != null) {
+                    $ad->furnitureFilter->newPrice = $request->newPrice;
+                    $ad->furnitureFilter->save();
+                }
+                if ($ad->clothesFasionFilter != null) {
+                    $ad->clothesFasionFilter->newPrice = $request->newPrice;
+                    $ad->clothesFasionFilter->save();
+                }
+                if ($ad->generalAdditionalField != null) {
+                    $ad->generalAdditionalField->newPrice = $request->newPrice;
+                    $ad->generalAdditionalField->save();
+                }
+            }
+            if ($request->has("currency")) {
+                if ($ad->apartementFilter != null) {
+                    $ad->apartementFilter->currency = $request->currency;
+                    $ad->apartementFilter->save();
+                }
+                if ($ad->farmFilter != null) {
+                    $ad->farmFilter->currency = $request->currency;
+                    $ad->farmFilter->save();
+                }
+                if ($ad->landFilter != null) {
+                    $ad->landFilter->currency = $request->currency;
+                    $ad->landFilter->save();
+                }
+                if ($ad->commercialStoreFilter != null) {
+                    $ad->commercialStoreFilter->currency = $request->currency;
+                    $ad->commercialStoreFilter->save();
+                }
+                if ($ad->officeFilter != null) {
+                    $ad->officeFilter->currency = $request->currency;
+                    $ad->officeFilter->save();
+                }
+                if ($ad->shalehFilter != null) {
+                    $ad->shalehFilter->currency = $request->currency;
+                    $ad->shalehFilter->save();
+                }
+                if ($ad->vellaFilter != null) {
+                    $ad->vellaFilter->currency = $request->currency;
+                    $ad->vellaFilter->save();
+                }
+                if ($ad->commonVehicleFilter != null) {
+                    $ad->commonVehicleFilter->currency = $request->currency;
+                    $ad->commonVehicleFilter->save();
+                }
+                if ($ad->sparePartsVehicleFilter != null) {
+                    $ad->sparePartsVehicleFilter->currency = $request->currency;
+                    $ad->sparePartsVehicleFilter->save();
+                }
+                if ($ad->mobTabFilter != null) {
+                    $ad->mobTabFilter->currency = $request->currency;
+                    $ad->mobTabFilter->save();
+                }
+                if ($ad->mobTabFilter != null) {
+                    $ad->mobTabFilter->currency = $request->currency;
+                    $ad->mobTabFilter->save();
+                }
+                if ($ad->computerFilter != null) {
+                    $ad->computerFilter->currency = $request->currency;
+                    $ad->computerFilter->save();
+                }
+                if ($ad->execoarFilter != null) {
+                    $ad->execoarFilter->currency = $request->currency;
+                    $ad->execoarFilter->save();
+                }
+                if ($ad->execoarFilter != null) {
+                    $ad->execoarFilter->currency = $request->currency;
+                    $ad->execoarFilter->save();
+                }
+                if ($ad->restDevicesFilter != null) {
+                    $ad->restDevicesFilter->currency = $request->currency;
+                    $ad->restDevicesFilter->save();
+                }
+                if ($ad->restDevicesFilter != null) {
+                    $ad->restDevicesFilter->currency = $request->currency;
+                    $ad->restDevicesFilter->save();
+                }
+                if ($ad->furnitureFilter != null) {
+                    $ad->furnitureFilter->currency = $request->currency;
+                    $ad->furnitureFilter->save();
+                }
+                if ($ad->clothesFasionFilter != null) {
+                    $ad->clothesFasionFilter->currency = $request->currency;
+                    $ad->clothesFasionFilter->save();
+                }
+                if ($ad->generalAdditionalField != null) {
+                    $ad->generalAdditionalField->currency = $request->currency;
+                    $ad->generalAdditionalField->save();
+                }
+            }
+
+
+            return response()->json([
+                "message" => "edit advertisement done"
+            ]);
+        } else {
+            return response()->json([
+                "message" => "no advertisement with this id"
+            ], 404);
+        }
     }
 }
