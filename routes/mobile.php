@@ -4,13 +4,12 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CountriesInfoController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AdvertisementController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ComplaintController;
-use App\Http\Controllers\VehiclesInfoController;
 use App\Http\Controllers\ReplyController;
-use App\Http\Controllers\CommentController;
-use App\Models\User;
+use App\Http\Controllers\VehiclesInfoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -25,7 +24,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user3', function (Request $request) {
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
@@ -40,18 +39,17 @@ Route::get('/all-advertisements/{user_id?}', [AdvertisementController::class, 'g
 Route::get('/advertisements-filter/{user_id?}', [AdvertisementController::class, 'advertisementsFilter']);
 Route::get('/advertisements-search/{user_id?}', [AdvertisementController::class, 'advertisementsSearch']);
 Route::get('/vehicles-brands', [VehiclesInfoController::class, 'getVehicleBrands']);
+Route::get('/ad-details/{id}', [AdvertisementController::class, 'advertisementDetails']);
+Route::get('/similar-ads/{ad_id}/{user_id?}', [AdvertisementController::class, 'similarAds']);
+Route::get('/advertisement-comments/{ad_id}', [CommentController::class, 'advertisementComments']);
 
 //protected routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
 
-    Route::get('/all-users', function () {
-        return User::get();
-    });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/verify-account', [AuthController::class, 'verifyAccount']);
     Route::post('/resend-code', [AuthController::class, 'resendCode']);
     Route::post('/add-new-ad', [AdvertisementController::class, 'addNewAdvertisement']);
-    Route::get('/ad-details/{id}', [AdvertisementController::class, 'advertisementDetails']);
     Route::post('/add-ad-favorite/{user_id}/{ad_id}', [FavoriteController::class, 'addAdvertisementToFavoriteList']);
     Route::delete('/remove-ad-favorite/{user_id}/{ad_id}', [FavoriteController::class, 'removeAdvertisementFromFavoriteList']);
     Route::get('/is-ad-in-favorite-list/{user_id}/{ad_id}', [FavoriteController::class, 'checkIfAdvertisementInFavoriteList']);
@@ -59,12 +57,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/remove-like/{user_id}/{ad_id}', [LikeController::class, 'removeLikeFromAdvertisement']);
     Route::get('/is-ad-liked/{user_id}/{ad_id}', [LikeController::class, 'checkIfAdvertisementIsLiked']);
     Route::post('/add-complaint', [ComplaintController::class, 'addComplaint']);
-    Route::get('/advertisement-comments/{ad_id}', [CommentController::class, 'advertisementComments']);
     Route::post('/add-comment', [CommentController::class, 'addComment']);
     Route::delete('/delete-comment/{comment_id}/{user_id}', [CommentController::class, 'deleteComment']);
     Route::post('/add-reply', [ReplyController::class, 'addReply']);
     Route::delete('/delete-reply/{reply_id}/{user_id}', [ReplyController::class, 'deleteReply']);
-    Route::get('/similar-ads/{ad_id}/{user_id?}', [AdvertisementController::class, 'similarAds']);
     Route::get('/favorite-ads/{user_id}', [FavoriteController::class, 'allFavoriteList']);
     Route::get('/user-info/{user_id}', [AuthController::class, 'getUserInfo']);
     Route::post('/update-user-info/{user_id}', [AuthController::class, 'updateUserInfo']);
