@@ -10,6 +10,8 @@ use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\ReplyController;
 use App\Http\Controllers\VehiclesInfoController;
+use App\Http\Controllers\SliderImagesController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -42,6 +44,7 @@ Route::get('/vehicles-brands', [VehiclesInfoController::class, 'getVehicleBrands
 Route::get('/ad-details/{id}', [AdvertisementController::class, 'advertisementDetails']);
 Route::get('/similar-ads/{ad_id}/{user_id?}', [AdvertisementController::class, 'similarAds']);
 Route::get('/advertisement-comments/{ad_id}', [CommentController::class, 'advertisementComments']);
+Route::get('/silder-images', [SliderImagesController::class, 'getAllImages']);
 
 //protected routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -49,7 +52,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/verify-account', [AuthController::class, 'verifyAccount']);
     Route::post('/resend-code', [AuthController::class, 'resendCode']);
-    Route::post('/add-new-ad', [AdvertisementController::class, 'addNewAdvertisement']);
+    Route::post('/add-new-ad', [AdvertisementController::class, 'addNewAdvertisement'])->middleware('checkUserAccountStatus');
     Route::post('/add-ad-favorite/{user_id}/{ad_id}', [FavoriteController::class, 'addAdvertisementToFavoriteList']);
     Route::delete('/remove-ad-favorite/{user_id}/{ad_id}', [FavoriteController::class, 'removeAdvertisementFromFavoriteList']);
     Route::get('/is-ad-in-favorite-list/{user_id}/{ad_id}', [FavoriteController::class, 'checkIfAdvertisementInFavoriteList']);

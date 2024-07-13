@@ -36,7 +36,7 @@ class AdvertisementController extends Controller
 
     public function gatAllAdvertisement()
     {
-        $advertisements = Advertisement::with("category")->select("id", "category_id", "title", "status", "paidFor", "address")->get();
+        $advertisements = Advertisement::with("category", "user")->select("id", "category_id", "user_id", "title", "status", "paidFor", "address")->get();
         $tempAd = [];
         $newAds = $advertisements->map(function ($ad, $index) use ($tempAd) {
             // dd($ad->toArray());
@@ -292,6 +292,7 @@ class AdvertisementController extends Controller
             $advertisementDetails["description"] = $ad->description;
             $advertisementDetails["status"] = $ad->status;
             $advertisementDetails["paidFor"] = $ad->paidFor;
+            $advertisementDetails["rejectionReason"] = $ad->rejectionReason;
 
 
             $translated_address = $this->getTranslatedCountryAndCityName(json_decode($ad->address)->country, json_decode($ad->address)->city);

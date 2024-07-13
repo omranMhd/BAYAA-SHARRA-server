@@ -330,11 +330,11 @@ class AdvertisementController extends Controller
     {
         // here must return just active advertisements
 
-        $paginatedAdvertisements = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')/*->inRandomOrder()*/->orderBy('created_at', 'desc')->paginate(10);
+        $paginatedAdvertisements = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->where("status", "active")/*->inRandomOrder()*/->orderBy('created_at', 'desc')->paginate(10);
         // dd($paginatedAdvertisements);
         $convertedAds = $this->convertToCardForm(collect($paginatedAdvertisements->items()), $user_id);
 
-        $totalItems = Advertisement::count(); // Total items in the new data
+        $totalItems = Advertisement::where("status", "active")->count(); // Total items in the new data
         $current_page = request()->get('page', 1); // Get the current page number, default to 1 if not present
         $itemsPerPage = 10; // Define how many items you want to show per page
 
@@ -391,6 +391,9 @@ class AdvertisementController extends Controller
             $advertisementDetails["title"] = $ad->title;
             $advertisementDetails["location"] = $ad->location;
             $advertisementDetails["description"] = $ad->description;
+            $advertisementDetails["rejectionReason"] = $ad->rejectionReason;
+            $advertisementDetails["status"] = $ad->status;
+            $advertisementDetails["paidFortus"] = $ad->paidFor;
 
 
             $translated_address = $this->getTranslatedCountryAndCityName(json_decode($ad->address)->country, json_decode($ad->address)->city);
@@ -495,7 +498,7 @@ class AdvertisementController extends Controller
         // جيب رقم الفئة يلي بينتمي لها هذا الإعلان
         $category_id = $category->id;
         // جيب كلشي اعلانات تابعة لهذه الفئة
-        $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->where('category_id', $category_id)->whereNot('id', $ad_id)->inRandomOrder()->get();
+        $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->where("status", "active")->where('category_id', $category_id)->whereNot('id', $ad_id)->inRandomOrder()->get();
 
         // اذا مالقينا اعلانات لهي الفئة 
         if ($similar_ids->count() == 0) {
@@ -506,7 +509,7 @@ class AdvertisementController extends Controller
             // الفئة الحالية أساسية
             if ($category_parent_id ==  null) {
                 //  جيب أي 3 اعلانات
-                $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->whereNot('id', $ad_id)->inRandomOrder()->get();
+                $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->where("status", "active")->whereNot('id', $ad_id)->inRandomOrder()->get();
             }
             // الفئة الحالية فرعية
             else {
@@ -517,11 +520,11 @@ class AdvertisementController extends Controller
                     return $c->id;
                 });
 
-                $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->whereIn('category_id', $childCategoriesIds)->whereNot('id', $ad_id)->inRandomOrder()->get();
+                $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->where("status", "active")->whereIn('category_id', $childCategoriesIds)->whereNot('id', $ad_id)->inRandomOrder()->get();
 
                 if ($similar_ids->count() == 0) {
                     // رجع أي 3 اعلانات
-                    $similar_ids =  Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->whereNot('id', $ad_id)->take(3)->inRandomOrder()->get();
+                    $similar_ids =  Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->where("status", "active")->whereNot('id', $ad_id)->take(3)->inRandomOrder()->get();
                 }
                 //  else {
                 //     return $ads;
@@ -563,17 +566,17 @@ class AdvertisementController extends Controller
                     // if this main category do not have subcategories
                     if (count($subCategories_ids) == 0) {
                         // for example  "Industrial equipment" category
-                        $filterdAds = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->where('category_id', $category_id)->get();
+                        $filterdAds = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->where("status", "active")->where('category_id', $category_id)->get();
                     }
                     // if this main category  have subcategories
                     else if (count($subCategories_ids) > 0) {
                         // for example  "RealEstates" category
-                        $filterdAds = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->whereIn('category_id', $subCategories_ids)->get();
+                        $filterdAds = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->where("status", "active")->whereIn('category_id', $subCategories_ids)->get();
                     }
                 }
                 // if category is sub category
                 else {
-                    $filterdAds = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->where('category_id', $category_id)->get();
+                    $filterdAds = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->where("status", "active")->where('category_id', $category_id)->get();
                 }
 
                 // اذا معيار البلد موجود
@@ -2136,14 +2139,14 @@ class AdvertisementController extends Controller
         foreach ($wordsArray as $word) {
             $query->where('title', 'like', "%{$word}%");
         }
-        $ads = $query->select('id', 'created_at', 'address', 'title', 'category_id')->get();
+        $ads = $query->select('id', 'created_at', 'address', 'title', 'category_id')->where("status", "active")->get();
 
         if ($ads->count() == 0) {
             foreach ($wordsArray as $word) {
                 $query->orWhere('title', 'like', "%{$word}%");
             }
         }
-        $ads = $query->select('id', 'created_at', 'address', 'title', 'category_id')->get();
+        $ads = $query->select('id', 'created_at', 'address', 'title', 'category_id')->where("status", "active")->get();
 
 
         $convertedAds = $this->convertToCardForm($ads, $user_id);
