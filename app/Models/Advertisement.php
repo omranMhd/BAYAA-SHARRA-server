@@ -21,6 +21,7 @@ class Advertisement extends Model
         'contactNumber',
         'status',
         'paidFor',
+        'rejectionReason'
     ];
 
     public function images()

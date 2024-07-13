@@ -92,6 +92,7 @@ class AuthController extends Controller
         $authKey = 'email';
 
         $credentials = $request->only($authKey, 'password');
+        $credentials["type"] = "user";
 
         if (!Auth::attempt($credentials)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
