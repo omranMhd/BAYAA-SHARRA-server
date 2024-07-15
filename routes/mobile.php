@@ -11,6 +11,7 @@ use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\ReplyController;
 use App\Http\Controllers\VehiclesInfoController;
 use App\Http\Controllers\SliderImagesController;
+use App\Http\Controllers\NotificationsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -65,9 +66,12 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/delete-reply/{reply_id}/{user_id}', [ReplyController::class, 'deleteReply']);
     Route::get('/favorite-ads/{user_id}', [FavoriteController::class, 'allFavoriteList']);
     Route::get('/user-info/{user_id}', [AuthController::class, 'getUserInfo']);
+    Route::get('/user-ad-details/{id}', [AdvertisementController::class, 'userAdvertisementDetails']);
     Route::post('/update-user-info/{user_id}', [AuthController::class, 'updateUserInfo']);
     Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
     Route::get('/user-advertisements/{user_id}', [AdvertisementController::class, 'getAllUserAdvertisements']);
     Route::delete('/delete-advertisement/{id}', [AdvertisementController::class, 'deleteAdvertisement']);
     Route::post('/update-advertisement/{id}', [AdvertisementController::class, 'updateAdvertisement']);
+    Route::get('/all-notifications', [NotificationsController::class, 'getAllUserNotification']);
+    Route::post('/make-notification-read/{notifi_id}', [NotificationsController::class, 'makeNotificationAsRead']);
 });

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Events\ActivationAdvertisement;
+use App\Events\RejectAdvertisement;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Advertisement;
@@ -410,6 +412,13 @@ class AdvertisementController extends Controller
                 $ad->save();
             }
 
+
+            if ($ad->status == "active") {
+                event(new ActivationAdvertisement($ad));
+            }
+            if ($ad->status == "rejected") {
+                event(new RejectAdvertisement($ad));
+            }
 
             return response()->json([
                 "message" => "edit advertisement done"

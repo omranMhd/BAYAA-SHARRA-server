@@ -7,6 +7,8 @@ use App\Models\Comment;
 use App\Models\User;
 use App\Http\Requests\AddCommentRequest;
 use Illuminate\Http\Request;
+use App\Events\AddNewCommentAdvertisement;
+
 
 class CommentController extends Controller
 {
@@ -56,11 +58,13 @@ class CommentController extends Controller
             ], 400);
         }
 
-        Comment::create([
+        $comment = Comment::create([
             "user_id" => $request->user_id,
             "advertisement_id" => $request->advertisement_id,
             "value" => $request->value,
         ]);
+
+        event(new AddNewCommentAdvertisement($request->advertisement_id, $comment));
 
         return response()->json([
             "message" => "adding comment done successfully"

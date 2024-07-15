@@ -9,6 +9,8 @@ use App\Http\Requests\AddReplyRequest;
 use App\Models\Advertisement;
 use App\Models\Comment;
 use App\Models\Reply;
+use App\Events\ReplyOnComment;
+
 
 class ReplyController extends Controller
 {
@@ -52,11 +54,14 @@ class ReplyController extends Controller
         }, $ads->toArray());
 
         if (in_array($ad_id, $ad_ids)) {
-            Reply::create([
+            $reply = Reply::create([
                 "user_id" => $request->user_id,
                 "comment_id" => $request->comment_id,
                 "value" => $request->value,
             ]);
+
+            // event(new ReplyOnComment($request->advertisement_id, $reply));
+            event(new ReplyOnComment($reply->comment->advertisement->id, $reply, $reply->comment));
 
             return response()->json([
                 "message" => "adding reply done successfully !"

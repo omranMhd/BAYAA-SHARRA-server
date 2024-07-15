@@ -12,6 +12,7 @@ use App\Http\Controllers\Dashboard\CountriesInfoController;
 use App\Http\Controllers\Dashboard\ComplaintController;
 use App\Http\Controllers\Dashboard\VehiclesInfoController;
 use App\Http\Controllers\Dashboard\SliderImagesController;
+use App\Http\Controllers\NotificationsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,4 +64,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/silder-images', [SliderImagesController::class, 'getAllImages']);
     Route::post('/save-image', [SliderImagesController::class, 'saveImage']);
     Route::delete('/delete-image/{image_id}', [SliderImagesController::class, 'deleteImage']);
+
+    Route::get('/all-notifications', [NotificationsController::class, 'getAllUserNotification']);
+    Route::post('/make-notification-read/{notifi_id}', [NotificationsController::class, 'makeNotificationAsRead']);
 });
