@@ -50,7 +50,8 @@ class RejectAdvertisementNotification extends Notification
 
         return [
             "message" => ["en" => "Your ad has been rejected", "ar" => "تم رفض نشر إعلانك"],
-            "ad_id" => $this->ad->id
+            "ad_id" => $this->ad->id,
+            "ad_image" => $this->ad->images()->first()
         ];
     }
 

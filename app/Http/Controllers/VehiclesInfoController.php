@@ -17,11 +17,17 @@ class VehiclesInfoController extends Controller
                         ["en" => "Land Cruiser", "ar" => "لاندكروزر"],
                         ["en" => "Camry", "ar" => "كامري"],
                         ["en" => "Hilux", "ar" => "هايلوكس"],
+                        ["en" => "Avalon", "ar" => "آفالون"],
+                        ["en" => "Corolla", "ar" => "كورولا"],
+                        ["en" => "Yaris", "ar" => "ياريس"],
                     ]
                 ],
                 [
                     "brand" => ["en" => "FORD", "ar" => "فورد"],
-                    "models" => []
+                    "models" => [
+                        ["en" => "Explorer", "ar" => "إكبلورير"],
+                        ["en" => "Taurus", "ar" => "تاوريس"],
+                    ]
                 ],
                 [
                     "brand" => ["en" => "CHEVROLET", "ar" => "شيفروليه"],

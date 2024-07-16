@@ -51,7 +51,8 @@ class AcceptancePublishingAdvertisementNotification extends Notification
 
         return [
             "message" => ["en" => "Your ad has been accepted", "ar" => "تم قبول نشر إعلانك"],
-            "ad_id" => $this->ad->id
+            "ad_id" => $this->ad->id,
+            "ad_image" => $this->ad->images()->first()
         ];
     }
 

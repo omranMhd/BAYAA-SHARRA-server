@@ -451,17 +451,17 @@ class AdvertisementController extends Controller
                     // if this main category do not have subcategories
                     if (count($subCategories_ids) == 0) {
                         // for example  "Industrial equipment" category
-                        $filterdAds = Advertisement::with("category")->select("id", "category_id", "title", "status", "paidFor", "address")->where('category_id', $category_id)->get();
+                        $filterdAds = Advertisement::with("category", "user")->select("id", "user_id", "category_id", "title", "status", "paidFor", "address")->where('category_id', $category_id)->get();
                     }
                     // if this main category  have subcategories
                     else if (count($subCategories_ids) > 0) {
                         // for example  "RealEstates" category
-                        $filterdAds = Advertisement::with("category")->select("id", "category_id", "title", "status", "paidFor", "address")->whereIn('category_id', $subCategories_ids)->get();
+                        $filterdAds = Advertisement::with("category", "user")->select("id", "user_id", "category_id", "title", "status", "paidFor", "address")->whereIn('category_id', $subCategories_ids)->get();
                     }
                 }
                 // if category is sub category
                 else {
-                    $filterdAds = Advertisement::with("category")->select("id", "category_id", "title", "status", "paidFor", "address")->where('category_id', $category_id)->get();
+                    $filterdAds = Advertisement::with("category", "user")->select("id", "user_id", "category_id", "title", "status", "paidFor", "address")->where('category_id', $category_id)->get();
                 }
 
                 // اذا معيار البلد موجود
@@ -2025,15 +2025,14 @@ class AdvertisementController extends Controller
         foreach ($wordsArray as $word) {
             $query->where('title', 'like', "%{$word}%");
         }
-        $ads = $query->with("category")->select("id", "category_id", "title", "status", "paidFor", "address")->get();
+        $ads = $query->with("category", "user")->select("id", "user_id", "category_id", "title", "status", "paidFor", "address")->get();
 
         if ($ads->count() == 0) {
             foreach ($wordsArray as $word) {
                 $query->orWhere('title', 'like', "%{$word}%");
             }
         }
-        $ads = $query->with("category")->select("id", "category_id", "title", "status", "paidFor", "address")->get();
-
+        $ads = $query->with("category", "user")->select("id", "user_id", "category_id", "title", "status", "paidFor", "address")->get();
 
         $convertedAds = $this->convertToTableForm($ads);
 
