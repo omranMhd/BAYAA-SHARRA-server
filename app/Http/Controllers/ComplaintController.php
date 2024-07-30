@@ -7,6 +7,7 @@ use App\Models\Complaint;
 use App\Models\User;
 use App\Http\Requests\ComplaintStoreRequest;
 use Illuminate\Http\Request;
+use App\Events\AddNewComplaint;
 
 class ComplaintController extends Controller
 {
@@ -26,11 +27,13 @@ class ComplaintController extends Controller
             ], 400);
         }
 
-        Complaint::create([
+        $new_complaint = Complaint::create([
             "user_id" => $request->user_id,
             "advertisement_id" => $request->advertisement_id,
             "reason" => $request->reason,
         ]);
+
+        event(new AddNewComplaint($new_complaint));
 
         return response()->json([
             "message" => "sending complaint done successfully"

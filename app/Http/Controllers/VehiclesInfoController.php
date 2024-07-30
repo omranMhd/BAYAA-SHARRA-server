@@ -53,6 +53,7 @@ class VehiclesInfoController extends Controller
                         ["en" => "Elantra", "ar" => "الانترا"],
                         ["en" => "Accent", "ar" => "اكسنت"],
                         ["en" => "Azera", "ar" => "آزيرا"],
+                        ["en" => "Verna", "ar" => "فيرنا"],
                     ]
                 ],
                 [

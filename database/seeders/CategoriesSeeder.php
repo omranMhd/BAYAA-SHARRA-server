@@ -13,7 +13,7 @@ class CategoriesSeeder extends Seeder
     private $mainCategories = [
         ['id' => 1, 'name_en' => 'RealEstates', 'name_ar' => 'عقارات'], //عقارات
         ['id' => 2, 'name_en' => 'vehicles', 'name_ar' => 'مركبات'], //مركبات
-        ['id' => 3, 'name_en' => 'Electrical Electronic Devices', 'name_ar' => 'أجهزة كهربائية إلكترونية'], //أجهزة كهربائية وإلكترونية
+        ['id' => 3, 'name_en' => 'Devices', 'name_ar' => 'أجهزة'], //أجهزة  
         ['id' => 4, 'name_en' => 'Furniture', 'name_ar' => 'أثاث ومفروشات'], //أثاث ومفروشات
         ['id' => 5, 'name_en' => 'Animals', 'name_ar' => 'حيوانات'], //حيوانات
         ['id' => 6, 'name_en' => 'Personal Collections', 'name_ar' => 'مقتنيات شخصية'], //مقتنيات شخصية

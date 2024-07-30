@@ -6,11 +6,13 @@ use App\Events\ActivationAdvertisement;
 use App\Events\RejectAdvertisement;
 use App\Events\AddNewAdvertisement;
 use App\Events\AddNewCommentAdvertisement;
+use App\Events\AddNewComplaint;
 use App\Events\ReplyOnComment;
 use App\Listeners\SendNotification;
 use App\Listeners\SendNotificationRejectAdvertisement;
 use App\Listeners\SendNotificationAddNewAdvertisement;
 use App\Listeners\SendNotificationAddNewCommentOnAdvertisement;
+use App\Listeners\SendNotificationAddNewComplaint;
 use App\Listeners\SendNotificationReplyOnComment;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
@@ -42,6 +44,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         ReplyOnComment::class => [
             SendNotificationReplyOnComment::class
+        ],
+        AddNewComplaint::class => [
+            SendNotificationAddNewComplaint::class
         ],
     ];
 
