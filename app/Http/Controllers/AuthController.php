@@ -303,4 +303,133 @@ class AuthController extends Controller
             ], 500);
         }
     }
+    public function deleteUser()
+    {
+
+        if (Auth::check()) {
+            $user = Auth::user();
+            $user = User::find($user->id);
+            // dd($user->advertisements);
+            // return;
+            // Now you can access the user's attributes like $user->name, $user->email, etc.
+            try {
+                // باعتبار عم احذف كتير شغلات لازم حطهن ضمن ترانزاكشن
+                DB::transaction(function () use ($user) {
+
+                    //حذف كل اعلانات المستخدم
+                    $user_ads = $user->advertisements;
+                    foreach ($user_ads as $ad) {
+                        //حذف الشكاوي المتعلقة بهذا الأعلان
+                        $ad->complaints->map(function ($c) {
+                            $c->delete();
+                        });
+
+                        //حذف الاعلان هذا من القوائم المفضلة
+                        $ad->favorites->map(function ($c) {
+                            $c->delete();
+                        });
+
+                        //حذف الاعجابات المتعلقة بهذا الاعلان
+                        // return $ad->likes;
+                        $ad->likes->map(function ($c) {
+                            $c->delete();
+                        });
+
+                        //حذف التعليقات والردود المتعلقة بها ان وجدت
+                        // return $ad->comments->load('reply');
+                        $ad->comments->load('reply')->map(function ($c) {
+                            if ($c->reply != null) {
+                                $c->reply->delete();
+                            }
+                            $c->delete();
+                        });
+
+                        //حذف مسارات الصور وملفاتها
+                        // return $ad->images;
+                        $ad->images->map(function ($c) {
+                            //احذف ملف الصورة
+                            Storage::disk('public')->delete($c->url);
+
+                            //بعدين احذف مسارها من الجدول
+                            $c->delete();
+                        });
+
+                        //حذف البيانات الاضافية من جداول الفلاتر
+
+                        $ad->apartementFilter?->delete();
+                        $ad->farmFilter?->delete();
+                        $ad->landFilter?->delete();
+                        $ad->commercialStoreFilter?->delete();
+                        $ad->officeFilter?->delete();
+                        $ad->shalehFilter?->delete();
+                        $ad->vellaFilter?->delete();
+                        $ad->commonVehicleFilter?->delete();
+                        $ad->sparePartsVehicleFilter?->delete();
+                        $ad->mobTabFilter?->delete();
+                        $ad->computerFilter?->delete();
+                        $ad->execoarFilter?->delete();
+                        $ad->restDevicesFilter?->delete();
+                        $ad->furnitureFilter?->delete();
+                        $ad->clothesFasionFilter?->delete();
+                        $ad->generalAdditionalField?->delete();
+
+
+                        //حذف الاعلان نفسو
+                        $ad->delete();
+                    }
+
+                    //حذف كل الشكاوي التي قدمها المستخدم
+                    $user_complaints = $user->complaints;
+                    $user_complaints->map(function ($c) {
+                        $c->delete();
+                    });
+
+                    //حذف كل الاعجابات التي قدمها المستخدم
+                    $user_likes = $user->likes;
+                    $user_likes->map(function ($c) {
+                        $c->delete();
+                    });
+
+                    //حذف التعليقات والردود المتعلقة بها ان وجدت
+                    $user_comments = $user->comments->load('reply');
+                    $user_comments->map(function ($c) {
+                        if ($c->reply != null) {
+                            $c->reply->delete();
+                        }
+                        $c->delete();
+                    });
+
+                    //حذف كل الزيارات التي قام بها المستخدم
+                    $user_visitors = $user->visitors;
+                    $user_visitors->map(function ($c) {
+                        $c->delete();
+                    });
+
+                    //حذف كل القائمة المفضلة التي قام بها المستخدم
+                    $user_favorites = $user->favorites;
+                    $user_favorites->map(function ($c) {
+                        $c->delete();
+                    });
+
+
+                    //حذف بيانات المستخدم
+                    $user->delete();
+
+                    if ($user->image != null) {
+
+                        Storage::disk('public')->delete($user->image);
+                    }
+
+
+
+                    return response()->json([
+                        "message" => "delete done"
+                    ]);
+                });
+            } catch (\Exception $e) {
+                // Handle the exception
+                return $e->getMessage();
+            }
+        }
+    }
 }

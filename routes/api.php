@@ -53,6 +53,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/verify-account', [AuthController::class, 'verifyAccount']);
     Route::post('/resend-code', [AuthController::class, 'resendCode']);
+    Route::delete('/delete-account', [AuthController::class, 'deleteUser']);
     Route::post('/add-new-ad', [AdvertisementController::class, 'addNewAdvertisement'])->middleware('checkUserAccountStatus');
     Route::post('/add-ad-favorite/{user_id}/{ad_id}', [FavoriteController::class, 'addAdvertisementToFavoriteList']);
     Route::delete('/remove-ad-favorite/{user_id}/{ad_id}', [FavoriteController::class, 'removeAdvertisementFromFavoriteList']);
