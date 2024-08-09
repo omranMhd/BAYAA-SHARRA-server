@@ -623,57 +623,65 @@ class AdvertisementController extends Controller
     }
     public function similarAds($ad_id, $user_id = null)
     {
+        $ad = Advertisement::find($ad_id);
 
-        // جيب الفئة يلي بينتمي الها هذا الإعلان
-        $category = Advertisement::find($ad_id)->category;
-        // جيب رقم الفئة يلي بينتمي لها هذا الإعلان
-        $category_id = $category->id;
-        // جيب كلشي اعلانات تابعة لهذه الفئة
-        $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->where("status", "active")->where('category_id', $category_id)->whereNot('id', $ad_id)->inRandomOrder()->get();
+        if ($ad) {
+            // جيب الفئة يلي بينتمي الها هذا الإعلان
+            $category = $ad->category;
+            // جيب رقم الفئة يلي بينتمي لها هذا الإعلان
+            $category_id = $category->id;
+            // جيب كلشي اعلانات تابعة لهذه الفئة باستثناء الاعلان الاساسي الذي اريد احضار اعلانات مشابهة له
+            $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->/*take(3)->*/where("status", "active")->where('category_id', $category_id)->whereNot('id', $ad_id)->inRandomOrder()->get();
 
-        // اذا مالقينا اعلانات لهي الفئة 
-        if ($similar_ids->count() == 0) {
 
-            // شوف الفئة الحالية أساسية ولا فرعية
-            $category_parent_id = $category->parent_id;
+            // return $category->name_en;
 
-            // الفئة الحالية أساسية
-            if ($category_parent_id ==  null) {
-                //  جيب أي 3 اعلانات
-                $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->where("status", "active")->whereNot('id', $ad_id)->inRandomOrder()->get();
+            //اذا الاعلان كان عقار جبلي العقارات يلي بنفس المنطقة فقط
+            if (in_array($category->name_en, ["Apartment", "Farm", "Land", "Store", "Office", "Chalet", "Villa"])) {
+
+                $similar_ids = $similar_ids->filter(function ($ads) use ($ad) {
+                    return (json_decode($ad->address)->country === json_decode($ads->address)->country) && (json_decode($ad->address)->city === json_decode($ads->address)->city);
+                })->values();
             }
-            // الفئة الحالية فرعية
-            else {
-                // جيب الفئة الأساسية الأب للفئة الحالية يلي هي فرعية
-                $mainCategory = Category::find($category_parent_id);
-                // جيب ارقام الفئات الفرعية التابعة للفئة الأساسية السابقة
-                $childCategoriesIds =  $mainCategory->childCategories->map(function ($c) {
-                    return $c->id;
-                });
+            // اذا كان الاعلان سيارة جبلي السيارت يلي الها نفس الماركة والفئة
+            if ($category->name_en === "Car") {
 
-                $similar_ids = Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->take(3)->where("status", "active")->whereIn('category_id', $childCategoriesIds)->whereNot('id', $ad_id)->inRandomOrder()->get();
-
-                if ($similar_ids->count() == 0) {
-                    // رجع أي 3 اعلانات
-                    $similar_ids =  Advertisement::select('id', 'created_at', 'address', 'title', 'category_id')->where("status", "active")->whereNot('id', $ad_id)->take(3)->inRandomOrder()->get();
-                }
-                //  else {
-                //     return $ads;
-                // }
+                $similar_ids = $similar_ids->filter(function ($ads) use ($ad) {
+                    return ($ad->commonVehicleFilter?->brand === $ads->commonVehicleFilter?->brand) && ($ad->commonVehicleFilter->model === $ads->commonVehicleFilter->model);
+                })->values();
             }
+            // اذا كان الاعلان موبايل جبلي الموبايلات يلي الها نفس الماركة والفئة
+            if ($category->name_en === "Mobile") {
+
+                $similar_ids = $similar_ids->filter(function ($ads) use ($ad) {
+                    return ($ad->mobTabFilter?->brand === $ads->mobTabFilter?->brand) && ($ad->mobTabFilter?->category === $ads->mobTabFilter?->category);
+                })->values();
+            }
+            // اذا كان الاعلان تابليت جبلي التابليتس يلي الها نفس الماركة والفئة
+            if ($category->name_en === "Tablet") {
+
+                $similar_ids = $similar_ids->filter(function ($ads) use ($ad) {
+                    return ($ad->mobTabFilter?->brand === $ads->mobTabFilter?->brand) && ($ad->mobTabFilter?->category === $ads->mobTabFilter?->category);
+                })->values();
+            }
+            // اذا كان الاعلان حاسوب جبلي الحواسيب يلي الها نفس الماركة 
+            if ($category->name_en === "Computer") {
+
+                $similar_ids = $similar_ids->filter(function ($ads) use ($ad) {
+                    return $ad->computerFilter?->brand === $ads->computerFilter?->brand;
+                })->values();
+            }
+
+            $newAds = $this->convertToCardForm($similar_ids, $user_id);
+
+
+            return response()->json([
+                "message" => "Get similar Advertisements done Successfully",
+                "data" => $newAds
+            ]);
+        } else {
+            return response()->json(["message" => "no ad with this id"], 404);
         }
-
-        // اذا لقيت اعلانات رجعها
-
-        // return $similar_ids;
-
-        $newAds = $this->convertToCardForm($similar_ids, $user_id);
-
-
-        return response()->json([
-            "message" => "Get similar Advertisements done Successfully",
-            "data" => $newAds
-        ]);
     }
     public function advertisementsFilter(Request $request, $user_id = null)
     {
