@@ -171,6 +171,7 @@ class AdvertisementController extends Controller
                         "price" => $request->filterFields_price,
                         "currency" => $request->filterFields_currency,
                         "sellOrRent" => $request->filterFields_sellOrRent,
+                        "paymentMethodRent" => $request->filterFields_paymentMethodRent,
                         "paintStatus" => $request->filterFields_paintStatus,
                     ]);
                 }
